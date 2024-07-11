@@ -1,0 +1,166 @@
+@startuml
+
+skinparam classAttributeIconSize 0
+
+abstract class Location {
+    #id: Long
+    #name: String
+    #coordinates: Coordinates
+    +getName(): String
+    +setName(name: String): void
+    +getCoordinates(): Coordinates
+    +setCoordinates(coordinates: Coordinates): void
+    {abstract} +getType(): LocationType
+    +distanceTo(other: Location): double
+}
+
+class Store extends Location {
+    +getType(): LocationType
+}
+
+class Restaurant extends Location {
+    +getType(): LocationType
+}
+
+class Coordinates {
+    -latitude: double
+    -longitude: double
+    +getLatitude(): double
+    +getLongitude(): double
+    +distanceTo(other: Coordinates): double
+    +{static} getDestinationPoint(start: Coordinates, distanceKm: double, bearingDegrees: double): Coordinates
+}
+
+enum LocationType {
+    STORE
+    RESTAURANT
+}
+
+class Route {
+    -start: Coordinates
+    -end: Coordinates
+    -waypoints: List<Coordinates>
+    -totalDistance: double
+    +getStart(): Coordinates
+    +getEnd(): Coordinates
+    +getWaypoints(): List<Coordinates>
+    +getTotalDistance(): double
+    +setWaypoints(waypoints: List<Coordinates>): void
+    +calculateTotalDistance(): double
+}
+
+class NamedRoute {
+    -route: Route
+    -startName: String
+    -endName: String
+    +getRoute(): Route
+    +getStartName(): String
+    +getEndName(): String
+}
+
+interface LocationService {
+    +getAllLocations(): List<Location>
+    +searchLocations(query: String): List<Location>
+    +getLocationById(id: Long): Location
+    +addLocation(location: Location): void
+    +updateLocation(location: Location): void
+    +deleteLocation(id: Long): void
+}
+
+class InMemoryLocationService implements LocationService {
+    -locations: List<Location>
+}
+
+class MapService {
+    -locationService: LocationService
+    -routeStrategy: RouteStrategy
+    +findNearestLocation(coord: Coordinates): Location
+    +findLocationsWithinRadius(center: Coordinates, radiusKm: double): List<Location>
+    +calculateRoute(start: Location, end: Location): Route
+    +calculateNamedRoute(start: Location, end: Location): NamedRoute
+    +calculateNamedRoute(start: Coordinates, end: Coordinates, startName: String, endName: String): NamedRoute
+    +getLocationsInBounds(bounds: Bounds): List<Location>
+    +setRouteStrategy(strategy: RouteStrategy): void
+}
+
+class LocationServlet <<Servlet>> {
+    -locationService: LocationService
+    -mapService: MapService
+    +doGet(request: HttpServletRequest, response: HttpServletResponse): void
+    +doPost(request: HttpServletRequest, response: HttpServletResponse): void
+    +doPut(request: HttpServletRequest, response: HttpServletResponse): void
+    +doDelete(request: HttpServletRequest, response: HttpServletResponse): void
+}
+
+class ErrorResponse {
+    -message: String
+    +getMessage(): String
+    +setMessage(message: String): void
+}
+
+class DistanceUtil {
+    {static} +milesToKm(miles: double): double
+    {static} +kmToMiles(km: double): double
+}
+
+class Bounds {
+    -southwest: Coordinates
+    -northeast: Coordinates
+    +getSouthwest(): Coordinates
+    +getNortheast(): Coordinates
+    +contains(coord: Coordinates): boolean
+    +getWidth(): double
+    +getHeight(): double
+    +getCenter(): Coordinates
+    +intersects(other: Bounds): boolean
+}
+
+class LocationFactory {
+    {static} +createLocation(type: LocationType, id: Long, name: String, coordinates: Coordinates): Location
+    {static} +createStore(id: Long, name: String, coordinates: Coordinates): Store
+    {static} +createRestaurant(id: Long, name: String, coordinates: Coordinates): Restaurant
+}
+
+class TestDataGenerator {
+    {static} +generateTestLocations(count: int): List<Location>
+}
+
+interface RouteStrategy {
+   +calculateRoute(start: Coordinates, end: Coordinates): Route
+}
+
+class SimpleRouteStrategy implements RouteStrategy {
+    +calculateRoute(start: Coordinates, end: Coordinates): Route
+}
+
+class ConsoleHandler {
+}
+
+class ColoredConsoleHandler extends ConsoleHandler {
+    +publish(record: LogRecord): void
+    -colorize(level: Level, message: String): String
+}
+
+MapService o-- LocationService
+MapService o-- RouteStrategy
+MapService ..> Route
+MapService ..> NamedRoute
+MapService ..> Bounds
+MapService ..> LocationFactory
+LocationServlet -- MapService
+LocationServlet -- LocationService
+Location -- Coordinates
+Route -- Coordinates
+NamedRoute -- Route
+Location -- LocationType
+MapService ..> DistanceUtil
+LocationFactory ..> Location
+LocationFactory ..> LocationType
+TestDataGenerator ..> LocationFactory
+TestDataGenerator ..> Coordinates
+
+note "All Servlet classes use Jakarta EE\nfor Tomcat 10 compatibility" as N1
+note "Project uses Maven for dependency management\nand build automation" as N2
+LocationServlet .. N1
+
+@enduml

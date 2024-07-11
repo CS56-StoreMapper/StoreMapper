@@ -1,0 +1,59 @@
+# Directories
+target/                     # Maven build output
+.vscode/                    # Visual Studio Code settings
+data/                       # Application data files
+lab3/                       # Lab 3 specific files
+tmp/                        # Temporary files
+apache-tomcat-10.1.25/      # Tomcat server files
+.idea/                      # IntelliJ IDEA settings
+
+# macOS system files
+.DS_Store
+
+# Compiled class files
+*.class
+
+# Log files
+*.log
+
+# Package files
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# virtual machine crash logs
+hs_err_pid*
+
+# Maven
+.mvn/wrapper/maven-wrapper.jar
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# IntelliJ IDEA (additional)
+*.iml
+*.iws
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+
+# VS Code (additional)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Operating System Files
+Thumbs.db
