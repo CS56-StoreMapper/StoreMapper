@@ -7,4 +7,8 @@
 
   <display-name>StoreMapper Web Application (Tomcat 10)</display-name>
 
+  <context-param>
+    <param-name>java.util.logging.config.file</param-name>
+    <param-value>${catalina.base}/conf/logging.properties</param-value>
+  </context-param>
 </web-app>

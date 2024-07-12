@@ -26,6 +26,7 @@ public class LocationServlet extends HttpServlet {
 
     @Override
     public void init() throws ServletException {
+        LOG.info("LocationServlet initialized");
         locationService = new InMemoryLocationService();
     }
 
@@ -33,15 +34,23 @@ public class LocationServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
         LOG.info("GET request received: " + request.getRequestURL());
-        
-        List<Location> locations = locationService.getAllLocations();
-        
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-        
-        Gson gson = new Gson();
-        String jsonLocations = gson.toJson(locations);
-        
-        response.getWriter().write(jsonLocations);
+
+        try {
+            List<Location> locations = locationService.getAllLocations();
+            LOG.info("Retrieved " + locations.size() + " locations");
+
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+
+            Gson gson = new Gson();
+            String jsonLocations = gson.toJson(locations);
+
+            response.getWriter().write(jsonLocations);
+            LOG.info("Response sent successfully");
+        } catch (Exception e) {
+            LOG.severe("Error processing GET request: " + e.getMessage());
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.getWriter().write("Error processing request");
+        }
     }
 }
