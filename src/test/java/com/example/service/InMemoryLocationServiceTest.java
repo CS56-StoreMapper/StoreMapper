@@ -2,6 +2,8 @@ package com.example.service;
 
 import com.example.model.Coordinates;
 import com.example.model.Location;
+import com.example.service.InMemoryLocationService;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

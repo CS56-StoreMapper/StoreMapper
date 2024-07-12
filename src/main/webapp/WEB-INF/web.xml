@@ -11,4 +11,9 @@
     <param-name>java.util.logging.config.file</param-name>
     <param-value>${catalina.base}/conf/logging.properties</param-value>
   </context-param>
+
+  <welcome-file-list>
+    <welcome-file>index.html</welcome-file>
+  </welcome-file-list>
+
 </web-app>
