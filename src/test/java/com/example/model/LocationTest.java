@@ -6,21 +6,21 @@ import static org.junit.jupiter.api.Assertions.*;
 public class LocationTest {
 
     @Test
-    public void testLocationCreation() {
+    public void testStoreCreation() {
         Coordinates coords = new Coordinates(40.7128, -74.0060);
-        Location location = new Location(1L, "Test Location", coords);
+        Store store = new Store(1L, "Test Store", coords);
 
-        assertEquals(1L, location.getId());
-        assertEquals("Test Location", location.getName());
-        assertEquals(coords, location.getCoordinates());
+        assertEquals(1L, store.getId());
+        assertEquals("Test Store", store.getName());
+        assertEquals(coords, store.getCoordinates());
     }
 
     @Test
-    public void testLocationToString() {
+    public void testStoreToString() {
         Coordinates coords = new Coordinates(40.7128, -74.0060);
-        Location location = new Location(1L, "Test Location", coords);
+        Store store = new Store(1L, "Test Store", coords);
 
-        String expected = "Location{id=1, name='Test Location', coordinates=" + coords.toString() + "}";
-        assertEquals(expected, location.toString());
+        String expected = "Location{id=1, name='Test Store', coordinates=" + coords.toString() + "}";
+        assertEquals(expected, store.toString());
     }
 }

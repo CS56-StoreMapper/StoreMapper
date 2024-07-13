@@ -17,9 +17,8 @@ import com.example.service.LocationService;
 import com.example.service.InMemoryLocationService;
 import com.example.model.Location;
 
-@WebServlet("/locations")
+@WebServlet(name = "LocationServlet", urlPatterns = {"/", "/locations"})
 public class LocationServlet extends HttpServlet {
-    // Logger for logging errors
     private static final Logger LOG = Logger.getLogger(LocationServlet.class.getName());
 
     private LocationService locationService;
@@ -27,30 +26,51 @@ public class LocationServlet extends HttpServlet {
     @Override
     public void init() throws ServletException {
         LOG.info("LocationServlet initialized");
-        locationService = new InMemoryLocationService();
+        locationService = new InMemoryLocationService(50);
+        LOG.info("LocationServlet initialized with " + locationService.getAllLocations().size() + " locations");
     }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
+        String pathInfo = request.getPathInfo();
+        String servletPath = request.getServletPath();
+        String queryString = request.getQueryString();
         LOG.info("GET request received: " + request.getRequestURL());
+        LOG.info("Servlet path: " + servletPath);
+        LOG.info("Path info: " + pathInfo);
 
         try {
-            List<Location> locations = locationService.getAllLocations();
-            LOG.info("Retrieved " + locations.size() + " locations");
-
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-
-            Gson gson = new Gson();
-            String jsonLocations = gson.toJson(locations);
-
-            response.getWriter().write(jsonLocations);
-            LOG.info("Response sent successfully");
+            if ("/locations".equals(servletPath)) {
+                handleGetAllLocations(request, response);
+            } else {
+                request.getRequestDispatcher("/WEB-INF/index.jsp").forward(request, response);
+            }
         } catch (Exception e) {
             LOG.severe("Error processing GET request: " + e.getMessage());
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            response.getWriter().write("Error processing request");
+            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error processing request");
         }
+    }
+
+    private void handleGetAllLocations(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        LOG.info("Handling get all locations request");
+        List<Location> locations = locationService.getAllLocations();
+        LOG.info("Found " + locations.size() + " locations");
+
+        sendJsonResponse(response, locations);
+    }
+
+
+    private void sendJsonResponse(HttpServletResponse response, Object data) throws IOException {
+        response.setContentType("application/json; charset=UTF-8");
+        String jsonResponse = new Gson().toJson(data);
+        LOG.info("Sending JSON response: " + jsonResponse);
+        response.getWriter().write(jsonResponse);
+    } 
+
+    private void sendErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/json");
+        new Gson().toJson(new ErrorResponse(message), response.getWriter());
     }
 }

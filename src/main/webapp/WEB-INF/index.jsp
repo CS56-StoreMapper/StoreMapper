@@ -18,15 +18,17 @@
         var map = L.map('map').setView([34.0522, -118.2437], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        fetch('/storemapper/locations')
+        fetch('/locations')
             .then(response => response.json())
             .then(locations => {
+                console.log('Received locations:', locations);
                 locations.forEach(location => {
                     L.marker([location.coordinates.latitude, location.coordinates.longitude])
                         .addTo(map)
                         .bindPopup(location.name);
                 });
-            });
+            })
+            .catch(error => console.error('Error fetching locations:', error));
     </script>
 </body>
 </html>

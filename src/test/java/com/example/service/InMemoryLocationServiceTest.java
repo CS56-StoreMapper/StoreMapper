@@ -1,7 +1,9 @@
 package com.example.service;
 
 import com.example.model.Coordinates;
+import com.example.model.Store;
 import com.example.model.Location;
+
 import com.example.service.InMemoryLocationService;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -21,28 +23,34 @@ public class InMemoryLocationServiceTest {
     }
 
     @Test
-    public void testAddAndGetLocation() {
-        Location location = new Location(1L, "Test Location", new Coordinates(40.7128, -74.0060));
-        service.addLocation(location);
+    public void testAddAndGetStore() {
+        Store store = new Store(1L, "Test Store", new Coordinates(40.7128, -74.0060));
+        service.addLocation(store);
 
         Location retrieved = service.getLocationById(1L);
-        assertEquals(location, retrieved);
+        assertEquals(store, retrieved);
     }
 
     @Test
     public void testGetAllLocations() {
-        Location location1 = new Location(1L, "Location 1", new Coordinates(40.7128, -74.0060));
-        Location location2 = new Location(2L, "Location 2", new Coordinates(34.0522, -118.2437));
+        Store store1 = new Store(1L, "Store 1", new Coordinates(40.7128, -74.0060));
+        Store store2 = new Store(2L, "Store 2", new Coordinates(34.0522, -118.2437));
 
-        service.addLocation(location1);
-        service.addLocation(location2);
+        service.addLocation(store1);
+        service.addLocation(store2);
 
-        System.out.println(location1);
-        System.out.println(location2);
+        System.out.println(store1);
+        System.out.println(store2);
 
         List<Location> allLocations = service.getAllLocations();
         assertEquals(2, allLocations.size());
-        assertTrue(allLocations.contains(location1));
-        assertTrue(allLocations.contains(location2));
+        assertTrue(allLocations.contains(store1));
+        assertTrue(allLocations.contains(store2));
+    }
+
+    @Test
+    public void testWithGeneratedLocations() {
+        InMemoryLocationService serviceWithLocations = new InMemoryLocationService(50);
+        assertEquals(50, serviceWithLocations.getAllLocations().size());
     }
 }

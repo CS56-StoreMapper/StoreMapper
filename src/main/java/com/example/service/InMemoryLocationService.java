@@ -5,12 +5,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import com.example.model.Location;
+import com.example.util.TestDataGenerator;
 
 public class InMemoryLocationService implements LocationService {
     private Map<Long, Location> locations;
 
     public InMemoryLocationService() {
-        locations = new HashMap<>();
+        this.locations = new HashMap<>();
+    }
+
+    // Constructor with number of locations to generate
+    public InMemoryLocationService(int numberOfLocations) {
+        this.locations = TestDataGenerator.generateTestLocations(numberOfLocations);
+    }
+
+    public InMemoryLocationService(Map<Long, Location> initialLocations) {
+        this.locations = new HashMap<>(initialLocations);
     }
 
     @Override
