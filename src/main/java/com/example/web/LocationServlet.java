@@ -26,7 +26,7 @@ public class LocationServlet extends HttpServlet {
     @Override
     public void init() throws ServletException {
         LOG.info("LocationServlet initialized");
-        locationService = new InMemoryLocationService(50);
+        locationService = new InMemoryLocationService(40);
         LOG.info("LocationServlet initialized with " + locationService.getAllLocations().size() + " locations");
     }
 

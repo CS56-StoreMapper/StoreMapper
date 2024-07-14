@@ -17,7 +17,7 @@
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
-        var map = L.map('map').setView([34.0168, -118.4707], 13);
+        var map = L.map('map').setView([34.0168, -118.4707], 12);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         let markers = L.featureGroup().addTo(map);
 
@@ -32,10 +32,12 @@
             markers.clearLayers();
             var listHtml = '<ul>';
             locations.forEach(function(location) {
-                var marker = L.marker([location.coordinates.latitude, location.coordinates.longitude])
-                    .bindPopup(location.name + ' ' + location.coordinates.latitude + ' ' + location.coordinates.longitude);
+                var lat = location.coordinates.latitude;
+                var lon = location.coordinates.longitude;
+                var marker = L.marker([lat, lon])
+                    .bindPopup(location.name + ' ' + lat + ' ' + lon);
                 markers.addLayer(marker);
-                listHtml += '<li>' + location.name + ' (' + location.type + ')</li>';
+                listHtml += '<li>' + location.name + ' (' + lat.toFixed(6) + ' ' + lon.toFixed(6) + ')</li>';
             });
             listHtml += '</ul>';
             document.getElementById('locationList').innerHTML = listHtml;
