@@ -1,11 +1,17 @@
 package com.example.model;
 
+import com.example.util.DistanceUtil;
+
+import com.example.model.LocationType;
+
+import java.util.Objects;
+
 /**
  * Represents a location with an ID, name, and coordinates.
  */
-public class Location {
+public abstract class Location implements Comparable<Location> {
     /** The unique identifier for the location. */
-    private long id;
+    private final long id;
     /** The name of the location. */
     private String name;
     /** The coordinates of the location. */
@@ -24,31 +30,53 @@ public class Location {
         this.coordinates = coordinates;
     }
 
-    /**
-     * Gets the ID of the location.
-     *
-     * @return The location's ID.
-     */
-    public long getId() {
-        return id;
+    public Location(long id, String name, double latitude, double longitude) {
+        this(id, name, new Coordinates(latitude, longitude));
+    }
+
+     // Getters (no setters to maintain immutability)
+    public long getId() { return id; }
+    public String getName() { return name; }
+    public Coordinates getCoordinates() { return coordinates; }
+
+    public abstract LocationType getType();
+
+    @Override
+    public int compareTo(Location other) {
+        return Long.compare(this.id, other.id);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Location)) return false;
+        Location location = (Location) o;
+        return id == location.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 
     /**
-     * Gets the name of the location.
+     * Calculates the distance to another location in kilometers.
      *
-     * @return The location's name.
+     * @param other The other location to calculate the distance to.
+     * @return The distance in kilometers.
      */
-    public String getName() {
-        return name;
+    public double distanceTo(Location other) {
+        return this.coordinates.distanceTo(other.getCoordinates());
     }
 
     /**
-     * Gets the coordinates of the location.
+     * Calculates the distance to another location in miles.
      *
-     * @return The location's coordinates.
+     * @param other The other location to calculate the distance to.
+     * @return The distance in miles.
      */
-    public Coordinates getCoordinates() {
-        return coordinates;
+    public double distanceToInMiles(Location other) {
+        return DistanceUtil.kmToMiles(this.distanceTo(other));
     }
 
     /**

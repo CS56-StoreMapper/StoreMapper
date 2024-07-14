@@ -1,5 +1,6 @@
 package com.example.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -25,6 +26,16 @@ public final class Route {
         this.start = startPoint;
         this.end = endPoint;
         this.waypoints = List.of(start, end);
+        this.totalDistance = calculateTotalDistance();
+    }
+
+    public Route(List<Coordinates> waypoints) {
+        if (waypoints.size() < 2) {
+            throw new IllegalArgumentException("At least two waypoints are required to form a route.");
+        }
+        this.waypoints = new ArrayList<>(waypoints);
+        this.start = waypoints.get(0);
+        this.end = waypoints.get(waypoints.size() - 1);
         this.totalDistance = calculateTotalDistance();
     }
 
@@ -56,6 +67,16 @@ public final class Route {
     }
 
     /**
+     * Sets the waypoints for the route.
+     *
+     * @param waypoints A list of coordinates representing the waypoints.
+     */
+    public void setWaypoints(List<Coordinates> waypoints) {
+        this.waypoints = waypoints;
+        this.totalDistance = calculateTotalDistance();
+    }
+
+    /**
      * Gets the total distance of the route.
      *
      * @return The total distance in kilometers.
@@ -69,9 +90,12 @@ public final class Route {
      *
      * @return The calculated total distance in kilometers.
      */
-    private double calculateTotalDistance() {
-        // TODO: Implement distance calculation
-        return 0.0;
+    public double calculateTotalDistance() {
+        double totalDistance = 0;
+        for (int i = 0; i < waypoints.size() - 1; i++) {
+            totalDistance += waypoints.get(i).distanceTo(waypoints.get(i + 1));
+        }
+        return totalDistance;
     }
 
     /**
