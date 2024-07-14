@@ -6,29 +6,44 @@
     <title>StoreMapper</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
-        #map { height: 400px; }
+        #map { height: 600px; }
+        
     </style>
 </head>
 <body>
     <h1>StoreMapper</h1>
     <div id="map"></div>
+    <div id="locationList"></div>
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
-        var map = L.map('map').setView([34.0522, -118.2437], 13);
+        var map = L.map('map').setView([34.0168, -118.4707], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        let markers = L.featureGroup().addTo(map);
 
-        fetch('/locations')
-            .then(response => response.json())
-            .then(locations => {
-                console.log('Received locations:', locations);
-                locations.forEach(location => {
-                    L.marker([location.coordinates.latitude, location.coordinates.longitude])
-                        .addTo(map)
-                        .bindPopup(location.name);
+        function loadAllLocations() {
+            fetch('/locations')
+                .then(response => response.json())
+                .then(locations => {
+                    displayLocations(locations);
                 });
-            })
-            .catch(error => console.error('Error fetching locations:', error));
+        }
+        function displayLocations(locations) {
+            markers.clearLayers();
+            var listHtml = '<ul>';
+            locations.forEach(function(location) {
+                var marker = L.marker([location.coordinates.latitude, location.coordinates.longitude])
+                    .bindPopup(location.name + ' ' + location.coordinates.latitude + ' ' + location.coordinates.longitude);
+                markers.addLayer(marker);
+                listHtml += '<li>' + location.name + ' (' + location.type + ')</li>';
+            });
+            listHtml += '</ul>';
+            document.getElementById('locationList').innerHTML = listHtml;
+            if (locations.length > 0) {
+                map.fitBounds(markers.getBounds());
+            }
+        }
+        loadAllLocations();
     </script>
 </body>
 </html>

@@ -38,8 +38,9 @@ public class TestDataGenerator {
 
     private static Coordinates generateRandomCoordinates() {
         // Generate coordinates within a reasonable range (e.g., Los Angeles area)
-        double lat = 33.7 + (random.nextDouble() * 0.8); // 33.7 to 34.5
-        double lon = -118.5 + (random.nextDouble() * 0.7); // -118.5 to -117.8
+        double delta = 0.1;
+        double lat = 33.99 + (random.nextDouble() * 2 * delta - delta); 
+        double lon = -118.331 + (random.nextDouble() * 2 * delta - delta); 
         return new Coordinates(lat, lon);
     }
 }
