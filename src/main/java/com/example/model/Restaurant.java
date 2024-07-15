@@ -1,6 +1,6 @@
 package com.example.model;
 
-public class Restaurant extends Location {
+public final class Restaurant extends Location {
 
     public Restaurant(long id, String name, Coordinates coordinates) {
         super(id, name, coordinates);

@@ -31,9 +31,9 @@ The application demonstrates a clear separation of concerns across its layers:
 1. Clone the repository:
 
 2. Ensure you have the following installed:
-   - Java Development Kit (JDK) 11 or higher
+   - Java Development Kit (JDK) 21
    - Apache Maven
-   - Apache Tomcat 10
+   - Apache Tomcat 10.1
 
 3. Build the project:
 ```sh

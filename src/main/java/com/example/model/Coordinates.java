@@ -1,15 +1,9 @@
 package com.example.model;
 
-import java.util.Objects;
-
 /**
  * Represents a geographic coordinate with latitude and longitude.
  */
-public class Coordinates {
-    /** The latitude of the coordinate. */
-    private final double latitude;
-    /** The longitude of the coordinate. */
-    private final double longitude;
+public record Coordinates(double latitude, double longitude) {
 
     public static final double NORTH = 0.0;
     public static final double EAST = 90.0;
@@ -22,15 +16,13 @@ public class Coordinates {
      * @param latitude  The latitude of the coordinate.
      * @param longitude The longitude of the coordinate.
      */
-    public Coordinates(double latitude, double longitude) {
+    public Coordinates {
         if (latitude < -90 || latitude > 90) {
             throw new IllegalArgumentException("Latitude must be between -90 and 90 degrees");
         }
         if (longitude < -180 || longitude > 180) {
             throw new IllegalArgumentException("Longitude must be between -180 and 180 degrees");
         }
-        this.latitude = latitude;
-        this.longitude = longitude;
     }
 
     /**
@@ -122,19 +114,6 @@ public class Coordinates {
                                         Math.cos(d) - Math.sin(lat1) * Math.sin(lat2));
     
         return new Coordinates(Math.toDegrees(lat2), Math.toDegrees(lon2));
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Coordinates that = (Coordinates) o;
-        return Double.compare(getLatitude(), that.getLatitude()) == 0 && Double.compare(getLongitude(), that.getLongitude()) == 0;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getLatitude(), getLongitude());
     }
     
     /**

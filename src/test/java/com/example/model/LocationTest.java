@@ -20,7 +20,7 @@ public class LocationTest {
         Coordinates coords = new Coordinates(40.7128, -74.0060);
         Store store = new Store(1L, "Test Store", coords);
 
-        String expected = "Location{id=1, name='Test Store', coordinates=" + coords.toString() + "}";
+        String expected = "Location{id=1, name='Test Store', coordinates=Coordinates{latitude=40.712800, longitude=-74.006000}, type=STORE}";
         assertEquals(expected, store.toString());
     }
 }

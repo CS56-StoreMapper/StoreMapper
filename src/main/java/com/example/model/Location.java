@@ -2,14 +2,12 @@ package com.example.model;
 
 import com.example.util.DistanceUtil;
 
-import com.example.model.LocationType;
-
 import java.util.Objects;
 
 /**
  * Represents a location with an ID, name, and coordinates.
  */
-public abstract class Location implements Comparable<Location> {
+public abstract sealed class Location implements Comparable<Location> permits Store, Restaurant {
     /** The unique identifier for the location. */
     private final long id;
     /** The name of the location. */
@@ -49,14 +47,13 @@ public abstract class Location implements Comparable<Location> {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Location)) return false;
-        Location location = (Location) o;
-        return id == location.id;
+        if (!(o instanceof Location otherLocation)) return false;
+        return id == otherLocation.id;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return Long.hashCode(id);
     }
 
     /**
@@ -86,7 +83,7 @@ public abstract class Location implements Comparable<Location> {
      */
     @Override
     public String toString() {
-        return String.format("Location{id=%d, name='%s', coordinates=%s}",
-                id, name, coordinates);
+        return String.format("Location{id=%d, name='%s', coordinates=%s, type=%s}",
+                id, name, coordinates, getType());
     }
 }
