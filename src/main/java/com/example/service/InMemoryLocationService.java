@@ -10,7 +10,7 @@ import com.example.model.Location;
 import com.example.util.TestDataGenerator;
 
 public class InMemoryLocationService implements LocationService {
-    private Map<Long, Location> locations;
+    private final Map<Long, Location> locations;
 
     public InMemoryLocationService() {
         this.locations = new HashMap<>();
@@ -32,9 +32,10 @@ public class InMemoryLocationService implements LocationService {
 
     @Override
     public List<Location> searchLocations(String query) {
+        var lowercaseQuery = query.toLowerCase();
         return locations.values().stream()
-                .filter(location -> location.getName().toLowerCase().contains(query.toLowerCase()))
-                .collect(Collectors.toList());
+                .filter(location -> location.getName().toLowerCase().contains(lowercaseQuery))
+                .toList();
     }
 
     @Override

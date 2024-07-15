@@ -2,25 +2,21 @@ package com.example.util;
 
 import com.example.model.*;
 
-public class LocationFactory {
+public final class LocationFactory {
+    private LocationFactory() {}
+    
     public static Location createLocation(LocationType type, long id, String name, Coordinates coordinates) {
-        switch (type) {
-            case STORE:
-                return new Store(id, name, coordinates);
-            case RESTAURANT:
-                return new Restaurant(id, name, coordinates);
-            default:
-                throw new IllegalArgumentException("Unknown location type: " + type);
-        }
+        return switch (type) {
+            case STORE -> new Store(id, name, coordinates);
+            case RESTAURANT -> new Restaurant(id, name, coordinates);
+            default -> throw new IllegalArgumentException("Unknown location type: " + type);
+        };
     }
 
-    // Overloaded method for creating a location with latitude and longitude instead of Coordinates object
     public static Location createLocation(LocationType type, long id, String name, double latitude, double longitude) {
-        Coordinates coordinates = new Coordinates(latitude, longitude);
-        return createLocation(type, id, name, coordinates);
+        return createLocation(type, id, name, new Coordinates(latitude, longitude));
     }
 
-    // You can add more factory methods here if needed, for example:
     public static Store createStore(long id, String name, Coordinates coordinates) {
         return (Store) createLocation(LocationType.STORE, id, name, coordinates);
     }

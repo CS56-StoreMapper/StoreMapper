@@ -49,11 +49,8 @@ hs_err_pid*
 build/
 
 # VS Code (additional)
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+.vscode/settings.json
+!.vscode/settings.json.template
 
 # Operating System Files
 Thumbs.db

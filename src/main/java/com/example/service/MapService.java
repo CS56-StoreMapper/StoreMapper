@@ -50,7 +50,10 @@ public final class MapService {
     public Optional<Location> findNearestLocation(Coordinates point, Predicate<Location> filter) {
         return locationService.getAllLocations().stream()
                 .filter(filter)
-                .min(Comparator.comparing(location -> location.getCoordinates().distanceTo(point)));
+                .min((loc1, loc2) -> Double.compare(
+                    loc1.getCoordinates().distanceTo(point),
+                    loc2.getCoordinates().distanceTo(point)
+                ));
     }
 
     /**
@@ -67,7 +70,7 @@ public final class MapService {
         }
         return locationService.getAllLocations().stream()
                 .filter(location -> location.getCoordinates().distanceTo(point) <= radiusKm)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -107,6 +110,6 @@ public final class MapService {
         }
         return this.findLocationsWithinRadius(center, radiusKm).stream()
                 .filter(location -> location.getName().toLowerCase().contains(query.toLowerCase()))
-                .collect(Collectors.toList());
+                .toList();
     }
 }
