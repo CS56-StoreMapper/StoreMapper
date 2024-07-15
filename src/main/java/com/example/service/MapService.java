@@ -1,13 +1,14 @@
 package com.example.service;
 
+import java.util.Comparator;
 import java.util.List;
 import com.example.model.Coordinates;
 import com.example.model.Location;
 import com.example.model.Route;
+import com.example.model.Node;
+import com.example.model.Graph;
 import java.util.Optional;
 import java.util.function.Predicate;
-import java.util.Comparator;
-import java.util.stream.Collectors;
 
 /**
  * Service class for map-related operations.
@@ -17,17 +18,17 @@ import java.util.stream.Collectors;
 public final class MapService {
 
     private final LocationService locationService;
-    private final RouteStrategy routeStrategy;
+    private final Graph graph;
 
     /**
      * Constructs a new MapService.
      *
-     * @param locationService The location service to use.
-     * @param routeStrategy The route strategy to use.
+     * @param locationService The location service to use for retrieving location data.
+     * @param routeStrategy The route strategy to use for calculating routes.
      */
-    public MapService(final LocationService locationService, final RouteStrategy routeStrategy) {
+    public MapService(final LocationService locationService, final Graph graph) {
         this.locationService = locationService;
-        this.routeStrategy = routeStrategy;
+        this.graph = graph;
     }
 
     /**
@@ -56,6 +57,22 @@ public final class MapService {
                 ));
     }
 
+
+    /**
+     * Finds locations with a specific OSM tag key-value pair.
+     *
+     * @param key The OSM tag key to search for.
+     * @param value The OSM tag value to match.
+     * @return A list of locations that have the specified OSM tag.
+     */
+    public List<Location> findLocationsByOsmTag(String key, String value) {
+        return locationService.getAllLocations().stream()
+                .filter(location -> location.getOsmTag(key)
+                        .map(tag -> tag.equals(value))
+                        .orElse(false))
+                .toList();
+    }
+
     /**
      * Finds locations within a specified radius of a point.
      *
@@ -73,26 +90,37 @@ public final class MapService {
                 .toList();
     }
 
-    /**
-     * Calculates a route between two points.
-     *
-     * @param start The starting coordinates.
-     * @param end The ending coordinates.
-     * @return The calculated route.
-     */
+    public Route calculateRoute(final Location start, final Location end) {
+        Node startNode = findNearestGraphNode(start.getCoordinates());
+        Node endNode = findNearestGraphNode(end.getCoordinates());
+        List<Node> path = graph.findShortestPath(startNode, endNode);
+        return new Route(path);
+    }
+
     public Route calculateRoute(final Coordinates start, final Coordinates end) {
-        return routeStrategy.calculateRoute(start, end);
+        Node startNode = findNearestGraphNode(start);
+        Node endNode = findNearestGraphNode(end);
+        List<Node> path = graph.findShortestPath(startNode, endNode);
+        return new Route(path);
+    }
+
+    private Node findNearestGraphNode(Coordinates coordinates) {
+        return graph.getNodes().stream()
+                .min(Comparator.comparingDouble(node -> 
+                    coordinates.distanceTo(new Coordinates(node.lat(), node.lon()))))
+                .orElseThrow(() -> new IllegalStateException("No nodes in graph"));
+    }
+
+    public int getNodeCount() {
+        return graph.getNodeCount();
     }
 
     /**
-     * Calculates a route between two locations.
-     *
-     * @param start The starting location.
-     * @param end The ending location.
-     * @return The calculated route.
+     * Gets the count of ways in the graph
+     * This count includes only original ways, not reverse ways created for bidirectional streets
      */
-    public Route calculateRoute(final Location start, final Location end) {
-        return calculateRoute(start.getCoordinates(), end.getCoordinates());
+    public int getWayCount() {
+        return graph.getWayCount();
     }
 
     /**
@@ -112,4 +140,6 @@ public final class MapService {
                 .filter(location -> location.getName().toLowerCase().contains(query.toLowerCase()))
                 .toList();
     }
+
+    
 }

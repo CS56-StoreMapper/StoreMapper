@@ -22,15 +22,36 @@ public final class TestDataGenerator {
 
     private static Location generateRandomLocation(long id) {
         NameComponents nameComponents = generateRandomNameComponents();
-        if (nameComponents instanceof NameComponents(String prefix, String type)) {
-            String name = nameComponents.prefix + " " + nameComponents.type;
-            Coordinates coordinates = generateRandomCoordinates();
+        String name = nameComponents.prefix() + " " + nameComponents.type();
         
-            return random.nextBoolean()
-                ? LocationFactory.createStore(id, name, coordinates)
-                : LocationFactory.createRestaurant(id, name, coordinates);
-        }
-        throw new IllegalStateException("Invalid name components");
+        return switch (random.nextInt(3)) {
+            case 0 -> generateWithCoordinates(id, name);
+            case 1 -> generateWithLatLon(id, name);
+            case 2 -> generateWithOsmNode(id, name);
+            default -> throw new IllegalStateException("Unexpected value");
+        };
+    }
+
+    private static Location generateWithCoordinates(long id, String name) {
+        Coordinates coordinates = generateRandomCoordinates();
+        return random.nextBoolean()
+            ? LocationFactory.createStore(id, name, coordinates)
+            : LocationFactory.createRestaurant(id, name, coordinates);
+    }
+
+    private static Location generateWithLatLon(long id, String name) {
+        Coordinates coordinates = generateRandomCoordinates();
+        return random.nextBoolean()
+            ? LocationFactory.createStore(id, name, coordinates.getLatitude(), coordinates.getLongitude())
+            : LocationFactory.createRestaurant(id, name, coordinates.getLatitude(), coordinates.getLongitude());
+    }
+
+    private static Location generateWithOsmNode(long id, String name) {
+        Coordinates coordinates = generateRandomCoordinates();
+        Node osmNode = new Node(id, coordinates.getLatitude(), coordinates.getLongitude(), Map.of("name", name));
+        return random.nextBoolean()
+            ? LocationFactory.createStore(id, name, osmNode)
+            : LocationFactory.createRestaurant(id, name, osmNode);
     }
 
     private static NameComponents generateRandomNameComponents() {

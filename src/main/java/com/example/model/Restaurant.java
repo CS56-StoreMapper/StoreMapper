@@ -6,8 +6,21 @@ public final class Restaurant extends Location {
         super(id, name, coordinates);
     }
 
+    public Restaurant(long id, String name, double latitude, double longitude) {
+        super(id, name, latitude, longitude);
+    }
+
+    public Restaurant(long id, String name, Node osmNode) {
+        super(id, name, osmNode);
+    }
+
     @Override
     public LocationType getType() {
         return LocationType.RESTAURANT;
+    }
+
+    @Override
+    public String toString() {
+        return "Restaurant{" + super.toString() + "}";
     }
 }

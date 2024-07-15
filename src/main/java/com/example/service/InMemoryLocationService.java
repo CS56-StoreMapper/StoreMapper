@@ -39,6 +39,15 @@ public class InMemoryLocationService implements LocationService {
     }
 
     @Override
+    public List<Location> searchLocationsByOsmTag(String key, String value) {
+        return locations.values().stream()
+                .filter(location -> location.getOsmTag(key)
+                        .map(tag -> tag.equals(value))
+                        .orElse(false))
+                .toList();
+    }
+
+    @Override
     public void addLocation(Location location) {
         locations.put(location.getId(), location);
     }

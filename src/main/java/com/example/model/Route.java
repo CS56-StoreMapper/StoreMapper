@@ -8,11 +8,11 @@ import java.util.List;
  */
 public final class Route {
     /** The starting coordinates of the route. */
-    private Coordinates start;
+    private final Node start;
     /** The ending coordinates of the route. */
-    private Coordinates end;
+    private final Node end;
     /** The list of waypoints for the route. */
-    private List<Coordinates> waypoints;
+    private List<Node> waypoints;
     /** The total distance of the route in kilometers. */
     private double totalDistance;
 
@@ -22,18 +22,18 @@ public final class Route {
      * @param startPoint The starting coordinates of the route.
      * @param endPoint   The ending coordinates of the route.
      */
-    public Route(Coordinates startPoint, Coordinates endPoint) {
+    public Route(Node startPoint, Node endPoint) {
         this.start = startPoint;
         this.end = endPoint;
         this.waypoints = List.of(start, end);
         this.totalDistance = calculateTotalDistance();
     }
 
-    public Route(List<Coordinates> waypoints) {
+    public Route(List<Node> waypoints) {
         if (waypoints.size() < 2) {
             throw new IllegalArgumentException("At least two waypoints are required to form a route.");
         }
-        this.waypoints = new ArrayList<>(waypoints);
+        this.waypoints = List.copyOf(waypoints);
         this.start = waypoints.get(0);
         this.end = waypoints.get(waypoints.size() - 1);
         this.totalDistance = calculateTotalDistance();
@@ -44,7 +44,7 @@ public final class Route {
      *
      * @return The starting coordinates.
      */
-    public Coordinates getStart() {
+    public Node getStart() {
         return start;
     }
 
@@ -53,7 +53,7 @@ public final class Route {
      *
      * @return The ending coordinates.
      */
-    public Coordinates getEnd() {
+    public Node getEnd() {
         return end;
     }
 
@@ -62,18 +62,8 @@ public final class Route {
      *
      * @return A list of coordinates representing the waypoints.
      */
-    public List<Coordinates> getWaypoints() {
+    public List<Node> getWaypoints() {
         return waypoints;
-    }
-
-    /**
-     * Sets the waypoints for the route.
-     *
-     * @param waypoints A list of coordinates representing the waypoints.
-     */
-    public void setWaypoints(List<Coordinates> waypoints) {
-        this.waypoints = waypoints;
-        this.totalDistance = calculateTotalDistance();
     }
 
     /**
@@ -91,11 +81,23 @@ public final class Route {
      * @return The calculated total distance in kilometers.
      */
     public double calculateTotalDistance() {
-        double totalDistance = 0;
-        for (int i = 0; i < waypoints.size() - 1; i++) {
-            totalDistance += waypoints.get(i).distanceTo(waypoints.get(i + 1));
-        }
-        return totalDistance;
+        return waypoints.stream()
+            .mapToDouble(node -> {
+                int index = waypoints.indexOf(node);
+                if (index < waypoints.size() - 1) {
+                    return node.toCoordinates().distanceTo(waypoints.get(index + 1).toCoordinates());
+                }
+                return 0.0;
+            })
+            .sum();
+    }
+
+    public boolean containsNode(Node node) {
+        return waypoints.contains(node);
+    }
+    
+    public int getNodeCount() {
+        return waypoints.size();
     }
 
     /**
@@ -106,7 +108,7 @@ public final class Route {
      */
     @Override
     public String toString() {
-        return "Route from " + start + " to " + end + ", distance: "
-                + totalDistance + " km";
+        return "Route from " + start.toCoordinates() + " to " + end.toCoordinates() + 
+            ", distance: " + String.format("%.2f", totalDistance) + " km, waypoints: " + waypoints.size();
     }
 }

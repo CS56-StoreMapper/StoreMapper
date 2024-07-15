@@ -24,6 +24,15 @@ public interface LocationService {
     List<Location> searchLocations(String query);
 
     /**
+     * Searches for locations based on an OSM tag.
+     *
+     * @param key The OSM tag key.
+     * @param value The OSM tag value.
+     * @return A list of locations with the specified OSM tag.
+     */
+    List<Location> searchLocationsByOsmTag(String key, String value);
+
+    /**
      * Adds a new location.
      *
      * @param location The location to be added.

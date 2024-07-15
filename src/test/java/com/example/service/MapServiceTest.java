@@ -5,7 +5,9 @@ import static org.mockito.Mockito.*;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -17,25 +19,41 @@ import org.mockito.MockitoAnnotations;
 import com.example.model.Coordinates;
 import com.example.model.Location;
 import com.example.model.Store;
-
+import com.example.model.Way;
+import com.example.model.Graph;
 import com.example.model.Route;
+import com.example.model.Node;
 
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.closeTo;
 
 class MapServiceTest {
 
     @Mock
     private LocationService locationService;
 
+    private Graph graph;
     private MapService mapService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        RouteStrategy routeStrategy = new SimpleRouteStrategy();
-        mapService = new MapService(locationService, routeStrategy);
+        graph = new Graph();
+        // Add some nodes and ways to the graph for testing
+        Node node1 = new Node(1, 34.0522, -118.2437);
+        Node node2 = new Node(2, 34.0523, -118.2438);
+        Node node3 = new Node(3, 34.0524, -118.2439);
+        graph.addNode(node1);
+        graph.addNode(node2);
+        graph.addNode(node3);
+
+        Map<String, Object> wayData1 = new HashMap<>();
+        wayData1.put("tags", Map.of("highway", "residential", "oneway", "no"));
+        Map<String, Object> wayData2 = new HashMap<>();
+        wayData2.put("tags", Map.of("highway", "residential", "oneway", "no"));
+        
+        graph.addWay(new Way(node1, node2, wayData1));
+        graph.addWay(new Way(node2, node3, wayData2));
+        
+        mapService = new MapService(locationService, graph);
     }
 
     @Nested
@@ -160,44 +178,37 @@ class MapServiceTest {
     class CalculateRouteTests {
         @Test
         void testBasicRoute() {
-            Coordinates start = new Coordinates(34.0522, -118.2437);
-            Coordinates end = Coordinates.getDestinationPoint(start, 1, 45);
-            Route route = mapService.calculateRoute(start, end);
-            assertNotNull(route);
-            assertEquals(start, route.getStart());
-            assertEquals(end, route.getEnd());
-            assertEquals(2, route.getWaypoints().size());
-            assertTrue(route.getTotalDistance() > 0);
-        }
-
-        @Test
-        void testRouteWithNames() {
-            Coordinates start = new Coordinates(34.0522, -118.2437);
-            Coordinates end = Coordinates.getDestinationPoint(start, 1, 45);
+            Location start = new Store(1, "Start", new Coordinates(34.0522, -118.2437));
+            Location end = new Store(2, "End", new Coordinates(34.0524, -118.2439));
             
             Route route = mapService.calculateRoute(start, end);
             
             assertNotNull(route);
-            assertEquals(start, route.getStart());
-            assertEquals(end, route.getEnd());
-            assertEquals(2, route.getWaypoints().size());
+            assertEquals(3, route.getWaypoints().size());
             assertTrue(route.getTotalDistance() > 0);
         }
 
         @Test
-        void testCalculateRouteWithTwoPoints() {
+        void testRouteWithCoordinates() {
             Coordinates start = new Coordinates(34.0522, -118.2437);
-            Coordinates end = Coordinates.getDestinationPoint(start, 1, Coordinates.NORTH);
+            Coordinates end = new Coordinates(34.0524, -118.2439);
             
             Route route = mapService.calculateRoute(start, end);
             
-            assertNotNull(route, "Route should not be null");
-            assertEquals(start, route.getStart(), "Start coordinate should match");
-            assertEquals(end, route.getEnd(), "End coordinate should match");
-            assertTrue(route.getWaypoints().size() >= 2, "Should have at least 2 waypoints");
-            assertTrue(route.getTotalDistance() >= start.distanceTo(end), "Route distance should be at least the direct distance");
-            assertTrue(route.getTotalDistance() <= start.distanceTo(end) * 1.5, "Route distance should not be more than 50% longer than direct distance");
+            assertNotNull(route);
+            assertEquals(3, route.getWaypoints().size());
+            assertTrue(route.getTotalDistance() > 0);
         }
+    }
+
+    @Test
+    void testGetNodeCount() {
+        assertEquals(3, mapService.getNodeCount());
+    }
+
+    @Test
+    void testGetWayCount() {
+        assertEquals(2, mapService.getWayCount(), "Expected 2 ways (counting bidirectional ways only once)");
     }
 
 }
