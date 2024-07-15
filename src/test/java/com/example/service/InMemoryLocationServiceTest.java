@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -52,5 +53,21 @@ public class InMemoryLocationServiceTest {
     public void testWithGeneratedLocations() {
         InMemoryLocationService serviceWithLocations = new InMemoryLocationService(50);
         assertEquals(50, serviceWithLocations.getAllLocations().size());
+    }
+
+    private Store createTestStore(long id, String name, double lat, double lon) {
+        return new Store(id, name, new Coordinates(lat, lon));
+    }
+
+    private void createAndAddTestStores(String testData) {
+        Stream.of(testData.split("\n"))
+            .map(line -> line.split(","))
+            .map(parts -> createTestStore(
+                Long.parseLong(parts[0]),
+                parts[1],
+                Double.parseDouble(parts[2]),
+                Double.parseDouble(parts[3])
+            ))
+            .forEach(service::addLocation);
     }
 }
