@@ -22,16 +22,6 @@ jobs:
       - name: List repository contents
         run: ls -lR
 
-      - name: Check file types
-        run: |
-          for file in data/*.json; do
-            echo "File: $file"
-            file "$file"
-            echo "First few lines:"
-            head -n 5 "$file"
-            echo "-------------------"
-          done
-
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -50,6 +40,16 @@ jobs:
             else
               echo "$file is present and not empty ($(wc -c < "data/$file") bytes)"
             fi
+          done
+        
+      - name: Check file types
+        run: |
+          for file in data/*.json; do
+            echo "File: $file"
+            file "$file"
+            echo "First few lines:"
+            head -n 5 "$file"
+            echo "-------------------"
           done
 
       - name: Validate JSON files
