@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.function.Function;
+import com.fasterxml.jackson.core.JsonParseException;
 
 public class OSMDataLoader {
 

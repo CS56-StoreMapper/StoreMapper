@@ -11,6 +11,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Echo a test message
+        run: echo "Workflow is running"
+
       - uses: actions/checkout@v3
 
       - name: Check Git LFS status
