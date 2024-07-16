@@ -14,6 +14,10 @@ public final class Store extends Location {
         super(id, name, osmNode);
     }
 
+    public Store(long id, double latitude, double longitude, Node osmNode) {
+        super(id, "Store " + id, new Coordinates(latitude, longitude), osmNode);
+    }
+
     @Override
     public LocationType getType() {
         return LocationType.STORE;

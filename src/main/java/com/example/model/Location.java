@@ -30,7 +30,7 @@ public abstract sealed class Location implements Comparable<Location> permits St
         this(id, name, new Coordinates(osmNode.lat(), osmNode.lon()), osmNode);
     }
 
-    private Location(long id, String name, Coordinates coordinates, Node osmNode) {
+    public Location(long id, String name, Coordinates coordinates, Node osmNode) {
         this.id = id;
         this.name = name;
         this.coordinates = coordinates;
@@ -41,6 +41,15 @@ public abstract sealed class Location implements Comparable<Location> permits St
     public long getId() { return id; }
     public String getName() { return name; }
     
+
+    public double getLatitude() {
+        return osmNode != null ? osmNode.lat() : coordinates.getLatitude();
+    }
+
+    public double getLongitude() {
+        return osmNode != null ? osmNode.lon() : coordinates.getLongitude();
+    }
+
     public Coordinates getCoordinates() {
         return osmNode != null ? new Coordinates(osmNode.lat(), osmNode.lon()) : coordinates;
     }

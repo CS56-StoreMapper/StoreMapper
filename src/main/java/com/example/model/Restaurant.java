@@ -14,6 +14,10 @@ public final class Restaurant extends Location {
         super(id, name, osmNode);
     }
 
+    public Restaurant(long id, double latitude, double longitude, Node osmNode) {
+        super(id, "Restaurant " + id, new Coordinates(latitude, longitude), osmNode);
+    }
+
     @Override
     public LocationType getType() {
         return LocationType.RESTAURANT;

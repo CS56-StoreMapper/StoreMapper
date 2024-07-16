@@ -4,25 +4,49 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.function.Predicate;
 
+import com.example.model.Coordinates;
+import com.example.model.Graph;
 import com.example.model.Location;
+import com.example.model.Restaurant;
+import com.example.model.Store;
 import com.example.util.TestDataGenerator;
+import com.example.model.Node;
+import java.util.logging.Logger;
 
 public class InMemoryLocationService implements LocationService {
+    private static final Logger logger = Logger.getLogger(InMemoryLocationService.class.getName());
+    
     private final Map<Long, Location> locations;
+    private final Graph graph;
 
-    public InMemoryLocationService() {
+    public InMemoryLocationService(int nodeCount) {
+        this.graph = TestDataGenerator.generateTestGraph(nodeCount);
         this.locations = new HashMap<>();
+        initializeLocationsFromGraph();
     }
 
-    // Constructor with number of locations to generate
-    public InMemoryLocationService(int numberOfLocations) {
-        this.locations = TestDataGenerator.generateTestLocations(numberOfLocations);
+    public InMemoryLocationService(Graph graph) {
+        this.graph = graph;
+        this.locations = new HashMap<>();
+        initializeLocationsFromGraph();
     }
 
-    public InMemoryLocationService(Map<Long, Location> initialLocations) {
-        this.locations = new HashMap<>(initialLocations);
+    private void initializeLocationsFromGraph() {
+        logger.info("Initializing locations from graph");
+        for (Node node : graph.getNodes()) {
+            Location location;
+            if ("store".equals(node.tags().get("type"))) {
+                location = new Store(node.id(), node.lat(), node.lon(), node);
+            } else {
+                location = new Restaurant(node.id(), node.lat(), node.lon(), node);
+            }
+            locations.put(node.id(), location);
+        }
+        logger.info("Initialized " + locations.size() + " locations");
     }
 
     @Override
@@ -48,6 +72,24 @@ public class InMemoryLocationService implements LocationService {
     }
 
     @Override
+    public Optional<Location> findNearestLocation(Coordinates coordinates, Predicate<Location> filter) {
+        return locations.values().stream()
+            .filter(filter)
+            .min((loc1, loc2) -> Double.compare(
+                coordinates.distanceTo(loc1.getCoordinates()),
+                coordinates.distanceTo(loc2.getCoordinates())
+            ));
+    }
+
+    @Override
+    public List<Location> findLocationsWithinRadius(Coordinates coordinates, double radiusKm, Predicate<Location> filter) {
+        return locations.values().stream()
+                .filter(location -> coordinates.distanceTo(location.getCoordinates()) <= radiusKm)
+                .filter(filter)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public void addLocation(Location location) {
         locations.put(location.getId(), location);
     }
@@ -65,5 +107,9 @@ public class InMemoryLocationService implements LocationService {
     @Override
     public void deleteLocation(long id) {
         locations.remove(id);
+    }
+    @Override
+    public Graph getGraph() {
+        return this.graph;
     }
 }

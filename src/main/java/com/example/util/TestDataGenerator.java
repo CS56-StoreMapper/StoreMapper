@@ -1,11 +1,9 @@
 package com.example.util;
 
 import com.example.model.*;
-import java.util.Random;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.IntStream;
 import java.util.stream.Collectors;
-import java.util.function.Function;
 
 public final class TestDataGenerator {
     private static final Random random = new Random();
@@ -14,44 +12,41 @@ public final class TestDataGenerator {
 
     private record NameComponents(String prefix, String type) {}
 
-    public static Map<Long, Location> generateTestLocations(int count) {
-        return IntStream.rangeClosed(1, count)
-            .mapToObj(TestDataGenerator::generateRandomLocation)
-            .collect(Collectors.toMap(Location::getId, Function.identity()));
+    public static Graph generateTestGraph(int nodeCount) {
+        List<Node> nodes = IntStream.rangeClosed(1, nodeCount)
+            .mapToObj(TestDataGenerator::generateRandomNode)
+            .collect(Collectors.toList());
+
+        List<Way> ways = generateRandomWays(nodes);
+
+        return new Graph(nodes, ways);
     }
 
-    private static Location generateRandomLocation(long id) {
+    private static Node generateRandomNode(long id) {
         NameComponents nameComponents = generateRandomNameComponents();
         String name = nameComponents.prefix() + " " + nameComponents.type();
-        
-        return switch (random.nextInt(3)) {
-            case 0 -> generateWithCoordinates(id, name);
-            case 1 -> generateWithLatLon(id, name);
-            case 2 -> generateWithOsmNode(id, name);
-            default -> throw new IllegalStateException("Unexpected value");
-        };
+        Coordinates coordinates = generateRandomCoordinates();
+
+        Map<String, String> tags = new HashMap<>();
+        tags.put("name", name);
+        tags.put("type", random.nextBoolean() ? "store" : "restaurant");
+
+        return new Node(id, coordinates.getLatitude(), coordinates.getLongitude(), tags);
     }
 
-    private static Location generateWithCoordinates(long id, String name) {
-        Coordinates coordinates = generateRandomCoordinates();
-        return random.nextBoolean()
-            ? LocationFactory.createStore(id, name, coordinates)
-            : LocationFactory.createRestaurant(id, name, coordinates);
-    }
+    private static List<Way> generateRandomWays(List<Node> nodes) {
+        List<Way> ways = new ArrayList<>();
+        int wayCount = nodes.size() / 2; // Arbitrary number of ways
 
-    private static Location generateWithLatLon(long id, String name) {
-        Coordinates coordinates = generateRandomCoordinates();
-        return random.nextBoolean()
-            ? LocationFactory.createStore(id, name, coordinates.getLatitude(), coordinates.getLongitude())
-            : LocationFactory.createRestaurant(id, name, coordinates.getLatitude(), coordinates.getLongitude());
-    }
+        for (int i = 0; i < wayCount; i++) {
+            Node start = nodes.get(random.nextInt(nodes.size()));
+            Node end = nodes.get(random.nextInt(nodes.size()));
+            if (start != end) {
+                ways.add(new Way(start, end, Map.of("type", "road")));
+            }
+        }
 
-    private static Location generateWithOsmNode(long id, String name) {
-        Coordinates coordinates = generateRandomCoordinates();
-        Node osmNode = new Node(id, coordinates.getLatitude(), coordinates.getLongitude(), Map.of("name", name));
-        return random.nextBoolean()
-            ? LocationFactory.createStore(id, name, osmNode)
-            : LocationFactory.createRestaurant(id, name, osmNode);
+        return ways;
     }
 
     private static NameComponents generateRandomNameComponents() {

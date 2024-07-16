@@ -1,11 +1,13 @@
 package com.example.service;
 
 import java.util.List;
-import com.example.model.Location;
+import java.util.Optional;
+import java.util.function.Predicate;
 
-/**
- * Service interface for managing location data.
- */
+import com.example.model.Location;
+import com.example.model.Coordinates;
+import com.example.model.Graph;
+
 public interface LocationService {
 
     /**
@@ -31,6 +33,25 @@ public interface LocationService {
      * @return A list of locations with the specified OSM tag.
      */
     List<Location> searchLocationsByOsmTag(String key, String value);
+
+    /**
+     * Finds the nearest location to the given coordinates.
+     *
+     * @param coordinates The coordinates to search from.
+     * @param filter An optional filter predicate for locations.
+     * @return The nearest location, if any.
+     */
+    Optional<Location> findNearestLocation(Coordinates coordinates, Predicate<Location> filter);
+
+    /**
+     * Finds locations within a specified radius of the given coordinates.
+     *
+     * @param coordinates The center coordinates.
+     * @param radiusKm The radius in kilometers.
+     * @param filter An optional filter predicate for locations.
+     * @return A list of locations within the specified radius.
+     */
+    List<Location> findLocationsWithinRadius(Coordinates coordinates, double radiusKm, Predicate<Location> filter);
 
     /**
      * Adds a new location.
@@ -60,4 +81,11 @@ public interface LocationService {
      * @param id The ID of the location to be deleted.
      */
     void deleteLocation(long id);
+
+    /**
+     * Gets the underlying graph.
+     *
+     * @return The graph used by this service.
+     */
+    Graph getGraph();
 }

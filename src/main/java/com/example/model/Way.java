@@ -3,6 +3,7 @@ package com.example.model;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Represents a segment of an OpenStreetMap (OSM) way.
@@ -90,12 +91,60 @@ public record Way(Node startNode, Node endNode, Map<String, Object> data) {
     }
 
     /**
+     * Creates a Way object from a Map of OSM data.
+     *
+     * This method is used by the OSMDataLoader to create Way objects from the serialized data.
+     * It expects a Map with the following structure:
+     * {
+     *     "id": Long,
+     *     "nodes": List<Long>,
+     *     "tags": Map<String, String>
+     * }
+     *
+     * @param map A Map containing OSM Way data
+     * @return A new Way object
+     */
+    public static Way fromMap(Map<String, Object> map) {
+        try {
+            @SuppressWarnings("unchecked")
+            List<?> nodeIds = (List<?>) map.get("nodes");
+            if (nodeIds == null || nodeIds.size() < 2) {
+                throw new IllegalArgumentException("Way must have at least two nodes");
+            }
+    
+            List<Long> longNodeIds = nodeIds.stream()
+                    .map(Way::toLong)
+                    .collect(Collectors.toList());
+            Node startNode = new Node(longNodeIds.get(0), 0, 0);
+            Node endNode = new Node(longNodeIds.get(longNodeIds.size() - 1), 0, 0);
+    
+            return new Way(startNode, endNode, map);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid map data for Way: " + map, e);
+        }
+    }
+
+    private static long toLong(Object obj) {
+        if (obj instanceof Integer) {
+            return ((Integer) obj).longValue();
+        } else if (obj instanceof Long) {
+            return (Long) obj;
+        } else {
+            throw new IllegalArgumentException("Expected Integer or Long, but got " + obj.getClass().getName());
+        }
+    }
+
+    public Way withNodes(Node newStartNode, Node newEndNode) {
+        return new Way(newStartNode, newEndNode, this.data);
+    }
+
+    /**
      * Checks if this way is a one-way street.
      *
      * @return true if the way is one-way, false otherwise
      */
     public boolean isOneWay() {
-        return "yes".equals(getTags().get("oneway"));
+        return "yes".equals(getTags().get("oneway")) || "motorway".equals(getTags().get("highway"));
     }
 
     /**

@@ -2,6 +2,8 @@ package com.example.service;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
+
 import com.example.model.Coordinates;
 import com.example.model.Location;
 import com.example.model.Route;
@@ -27,8 +29,8 @@ public final class MapService {
      * @param routeStrategy The route strategy to use for calculating routes.
      */
     public MapService(final LocationService locationService, final Graph graph) {
-        this.locationService = locationService;
-        this.graph = graph;
+        this.locationService = Objects.requireNonNull(locationService, "LocationService must not be null");
+        this.graph = Objects.requireNonNull(graph, "Graph must not be null");
     }
 
     /**
@@ -49,8 +51,13 @@ public final class MapService {
      * @return An Optional containing the nearest location that satisfies the filter, or empty if none found.
      */
     public Optional<Location> findNearestLocation(Coordinates point, Predicate<Location> filter) {
-        return locationService.getAllLocations().stream()
-                .filter(filter)
+        List<Location> locations = locationService.getAllLocations();
+        if (locations == null) {
+            return Optional.empty();
+        }
+        return locations.stream()
+                .filter(Objects::nonNull)
+                .filter(filter != null ? filter : location -> true)
                 .min((loc1, loc2) -> Double.compare(
                     loc1.getCoordinates().distanceTo(point),
                     loc2.getCoordinates().distanceTo(point)
@@ -93,23 +100,45 @@ public final class MapService {
     public Route calculateRoute(final Location start, final Location end) {
         Node startNode = findNearestGraphNode(start.getCoordinates());
         Node endNode = findNearestGraphNode(end.getCoordinates());
-        List<Node> path = graph.findShortestPath(startNode, endNode);
-        return new Route(path);
+        return calculateRouteInternal(startNode, endNode);
     }
 
     public Route calculateRoute(final Coordinates start, final Coordinates end) {
         Node startNode = findNearestGraphNode(start);
         Node endNode = findNearestGraphNode(end);
+        return calculateRouteInternal(startNode, endNode);
+    }
+
+    private Route calculateRouteInternal(Node startNode, Node endNode) {
         List<Node> path = graph.findShortestPath(startNode, endNode);
+        if (path.isEmpty()) {
+            throw new RouteNotFoundException("No route found between the given points");
+        }
         return new Route(path);
     }
 
     private Node findNearestGraphNode(Coordinates coordinates) {
-        return graph.getNodes().stream()
+        Node nearest = graph.getNodes().stream()
                 .min(Comparator.comparingDouble(node -> 
                     coordinates.distanceTo(new Coordinates(node.lat(), node.lon()))))
                 .orElseThrow(() -> new IllegalStateException("No nodes in graph"));
+        System.out.println("Nearest node to " + coordinates + " is " + nearest);
+        return nearest;
     }
+
+    private Node locationToNode(Location location) {
+        if (location.getOsmNode().isPresent()) {
+            return location.getOsmNode().get();
+        }
+        return findNearestGraphNode(location.getCoordinates());
+    }
+
+    public Location nodeToLocation(Node node) {
+        // This method assumes that you want to create a generic Location from a Node, which we can't
+        // So this is a placeholder
+        return null;
+    }
+
 
     public int getNodeCount() {
         return graph.getNodeCount();
@@ -141,5 +170,9 @@ public final class MapService {
                 .toList();
     }
 
-    
+    public static class RouteNotFoundException extends RuntimeException {
+        public RouteNotFoundException(String message) {
+            super(message);
+        }
+    }
 }

@@ -51,12 +51,16 @@ public record Node(long id, double lat, double lon, Map<String, String> tags) {
      * @throws NullPointerException if required fields are missing
      */
     public static Node fromMap(Map<String, Object> map) {
-        long id = ((Number) map.get("id")).longValue();
-        double lat = ((Number) map.get("lat")).doubleValue();
-        double lon = ((Number) map.get("lon")).doubleValue();
-        @SuppressWarnings("unchecked")
-        Map<String, String> tags = (Map<String, String>) map.getOrDefault("tags", Map.of());
-        return new Node(id, lat, lon, tags);
+        try {
+            long id = ((Number) map.get("id")).longValue();
+            double lat = ((Number) map.get("lat")).doubleValue();
+            double lon = ((Number) map.get("lon")).doubleValue();
+            @SuppressWarnings("unchecked")
+            Map<String, String> tags = (Map<String, String>) map.getOrDefault("tags", Map.of());
+            return new Node(id, lat, lon, tags);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid map data for Node: " + map, e);
+        }
     }
 
     /**

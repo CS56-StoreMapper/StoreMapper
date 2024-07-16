@@ -2,14 +2,15 @@ package com.example.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
- * Represents a route between two coordinates.
+ * Represents a route between two nodes.
  */
 public final class Route {
-    /** The starting coordinates of the route. */
+    /** The starting node of the route. */
     private final Node start;
-    /** The ending coordinates of the route. */
+    /** The ending node of the route. */
     private final Node end;
     /** The list of waypoints for the route. */
     private List<Node> waypoints;
@@ -19,8 +20,8 @@ public final class Route {
     /**
      * Constructs a new Route object.
      *
-     * @param startPoint The starting coordinates of the route.
-     * @param endPoint   The ending coordinates of the route.
+     * @param startPoint The starting node of the route.
+     * @param endPoint   The ending node of the route.
      */
     public Route(Node startPoint, Node endPoint) {
         this.start = startPoint;
@@ -29,6 +30,12 @@ public final class Route {
         this.totalDistance = calculateTotalDistance();
     }
 
+    /**
+     * Constructs a new Route object from a list of waypoints.
+     *
+     * @param waypoints The list of nodes that make up the route.
+     * @throws IllegalArgumentException if less than two waypoints are provided.
+     */
     public Route(List<Node> waypoints) {
         if (waypoints.size() < 2) {
             throw new IllegalArgumentException("At least two waypoints are required to form a route.");
@@ -40,18 +47,18 @@ public final class Route {
     }
 
     /**
-     * Gets the starting coordinates of the route.
+     * Gets the starting node of the route.
      *
-     * @return The starting coordinates.
+     * @return The starting node.
      */
     public Node getStart() {
         return start;
     }
 
     /**
-     * Gets the ending coordinates of the route.
+     * Gets the ending node of the route.
      *
-     * @return The ending coordinates.
+     * @return The ending node.
      */
     public Node getEnd() {
         return end;
@@ -60,10 +67,19 @@ public final class Route {
     /**
      * Gets the list of waypoints for the route.
      *
-     * @return A list of coordinates representing the waypoints.
+     * @return A list of nodes representing the waypoints.
      */
     public List<Node> getWaypoints() {
         return waypoints;
+    }
+
+    /**
+     * Gets the list of nodes for the route.
+     *
+     * @return A list of nodes representing the waypoints.
+     */
+    public List<Node> getNodes() {
+        return new ArrayList<>(waypoints);
     }
 
     /**
@@ -81,15 +97,11 @@ public final class Route {
      * @return The calculated total distance in kilometers.
      */
     public double calculateTotalDistance() {
-        return waypoints.stream()
-            .mapToDouble(node -> {
-                int index = waypoints.indexOf(node);
-                if (index < waypoints.size() - 1) {
-                    return node.toCoordinates().distanceTo(waypoints.get(index + 1).toCoordinates());
-                }
-                return 0.0;
-            })
-            .sum();
+        double distance = 0.0;
+        for (int i = 0; i < waypoints.size() - 1; i++) {
+            distance += waypoints.get(i).toCoordinates().distanceTo(waypoints.get(i + 1).toCoordinates());
+        }
+        return distance;
     }
 
     public boolean containsNode(Node node) {
@@ -98,6 +110,17 @@ public final class Route {
     
     public int getNodeCount() {
         return waypoints.size();
+    }
+
+    public double estimateTravelTime(double averageSpeedKmh) {
+        return totalDistance / averageSpeedKmh;
+    }
+
+    public List<String> getTurnByTurnDirections() {
+        List<String> directions = new ArrayList<>();
+        // Implement logic to generate turn-by-turn directions
+        // This might involve comparing the bearing between consecutive nodes
+        return directions;
     }
 
     /**
