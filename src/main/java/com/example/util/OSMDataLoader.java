@@ -53,11 +53,22 @@ public class OSMDataLoader {
 
     public <T> List<T> loadData(String filename, Function<Map<String, Object>, T> mapper) throws IOException {
         File dataFile = DataFileManager.getDataFile(filename);
-        List<Map<String, Object>> dataList = objectMapper.readValue(dataFile, 
-                                             new TypeReference<List<Map<String, Object>>>() {});
-        return dataList.stream()
-                       .map(mapper)
-                       .toList();
+        try {
+            List<Map<String, Object>> dataList = objectMapper.readValue(dataFile, 
+                                                 new TypeReference<List<Map<String, Object>>>() {});
+            return dataList.stream()
+                           .map(mapper)
+                           .toList();
+        } catch (JsonParseException e) {
+            System.err.println("Error parsing JSON file: " + filename);
+            System.err.println("First 100 characters of file:");
+            try (BufferedReader reader = new BufferedReader(new FileReader(dataFile))) {
+                char[] buffer = new char[100];
+                reader.read(buffer);
+                System.err.println(new String(buffer));
+            }
+            throw e;
+        }
     }
 
     public <T> void saveData(List<T> items, String filename) throws IOException {

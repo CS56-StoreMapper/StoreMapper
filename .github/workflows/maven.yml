@@ -43,11 +43,20 @@ jobs:
           echo "Checking $file"
           if [ ! -f "data/$file" ] || [ ! -s "data/$file" ] || [ "$(wc -c < "data/$file")" -lt 1000 ]; then
             echo "Downloading $file from external source"
-            curl -o "data/$file" "https://pub-dacce4b1e1694983965461fa4da90666.r2.dev/$file"
+            curl -L -o "data/$file" "https://pub-dacce4b1e1694983965461fa4da90666.r2.dev/$file"
           else
             echo "$file is present and not empty ($(wc -c < "data/$file") bytes)"
           fi
         done
+    
+    - name: Check cambridge.ways.json content
+      run: |
+        echo "First 100 characters of cambridge.ways.json:"
+        head -c 100 data/cambridge.ways.json
+        echo "\n\nFile type:"
+        file data/cambridge.ways.json
+        echo "\n\nFile size:"
+        wc -c data/cambridge.ways.json
     
     - name: Increase Maven heap space
       run: echo "MAVEN_OPTS=-Xmx4g" >> $GITHUB_ENV
