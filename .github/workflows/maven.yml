@@ -41,16 +41,6 @@ jobs:
               echo "$file is present and not empty ($(wc -c < "data/$file") bytes)"
             fi
           done
-        
-      - name: Check file types
-        run: |
-          for file in data/*.json; do
-            echo "File: $file"
-            file "$file"
-            echo "First few lines:"
-            head -n 5 "$file"
-            echo "-------------------"
-          done
 
       - name: Validate JSON files
         run: |
