@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-16-core
 
     steps:
     - uses: actions/checkout@v3
@@ -21,7 +21,7 @@ jobs:
         distribution: 'temurin'
         cache: maven
     - name: Increase Maven heap space
-      run: echo "MAVEN_OPTS=-Xmx4g" >> $GITHUB_ENV
+      run: echo "MAVEN_OPTS=-Xmx8g" >> $GITHUB_ENV
     - name: Build with Maven
       run: mvn clean install
     - name: Run tests
