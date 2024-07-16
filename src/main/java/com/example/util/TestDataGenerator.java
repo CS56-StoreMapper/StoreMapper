@@ -36,17 +36,35 @@ public final class TestDataGenerator {
 
     private static List<Way> generateRandomWays(List<Node> nodes) {
         List<Way> ways = new ArrayList<>();
-        int wayCount = nodes.size() / 2; // Arbitrary number of ways
-
-        for (int i = 0; i < wayCount; i++) {
+        Set<Node> connectedNodes = new HashSet<>();
+        
+        // Ensure all nodes are connected
+        for (int i = 0; i < nodes.size() - 1; i++) {
+            Node start = nodes.get(i);
+            Node end = nodes.get(i + 1);
+            ways.add(new Way(start, end, Map.of("highway", "residential", "oneway", "no")));
+            connectedNodes.add(start);
+            connectedNodes.add(end);
+        }
+        
+        // Add some random additional connections
+        int additionalConnections = nodes.size() / 2;
+        for (int i = 0; i < additionalConnections; i++) {
             Node start = nodes.get(random.nextInt(nodes.size()));
             Node end = nodes.get(random.nextInt(nodes.size()));
-            if (start != end) {
-                ways.add(new Way(start, end, Map.of("type", "road")));
+            if (start != end && !areDirectlyConnected(ways, start, end)) {
+                ways.add(new Way(start, end, Map.of("highway", "residential", "oneway", "no")));
             }
         }
-
+        
         return ways;
+    }
+
+    private static boolean areDirectlyConnected(List<Way> ways, Node start, Node end) {
+        return ways.stream().anyMatch(way -> 
+            (way.startNode().equals(start) && way.endNode().equals(end)) ||
+            (way.startNode().equals(end) && way.endNode().equals(start))
+        );
     }
 
     private static NameComponents generateRandomNameComponents() {

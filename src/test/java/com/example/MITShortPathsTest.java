@@ -8,6 +8,15 @@ import com.example.model.Route;
 import java.util.List;
 
 public class MITShortPathsTest extends BaseMapTest {
+    @Override
+    protected String getDatasetName() {
+        return "mit";
+    }
+
+    @Override
+    protected Coordinates getTestPoint() {
+        return new Coordinates(42.3601, -71.0942); // Example coordinates for MIT area
+    }
 
     @Test
     public void test00_short() {
@@ -92,7 +101,8 @@ public class MITShortPathsTest extends BaseMapTest {
         }
     }
 
-    private boolean coordinatesClose(Coordinates c1, Coordinates c2) {
+    @Override
+    protected boolean coordinatesClose(Coordinates c1, Coordinates c2) {
         return Math.abs(c1.getLatitude() - c2.getLatitude()) <= 1e-9 &&
                Math.abs(c1.getLongitude() - c2.getLongitude()) <= 1e-9;
     }

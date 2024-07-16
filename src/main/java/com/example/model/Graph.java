@@ -47,18 +47,14 @@ public class Graph {
     public Graph(List<Node> nodes, List<Way> ways) {
         this.nodes = new HashMap<>();
         this.adjacencyList = new HashMap<>();
-        System.out.println("Initializing graph with " + nodes.size() + " nodes and " + ways.size() + " ways");
-    
+            
         for (Node node : nodes) {
             addNode(node);
-            System.out.println("Added node: " + node);
         }
 
         for (Way way : ways) {
             addWay(way);
         }
-
-        System.out.println("Final graph with " + nodes.size() + " nodes and " + ways.size() + " ways");
     }
 
     public void addNode(Node node) {
@@ -70,7 +66,6 @@ public class Graph {
         Map<String, String> tags = way.getTags();
         String highwayType = tags.get("highway");
         if (highwayType == null || !ALLOWED_HIGHWAY_TYPES.contains(highwayType)) {
-            System.out.println("Skipping way with illegal highway type: " + highwayType);
             return;
         }
 
@@ -81,11 +76,9 @@ public class Graph {
             addNodeIfAbsent(startId);
             addNodeIfAbsent(endId);
             adjacencyList.computeIfAbsent(startId, k -> new HashSet<>()).add(endId);
-            System.out.println("Added connection: " + startId + " -> " + endId);
             
             if (!way.isOneWay()) {
                 adjacencyList.computeIfAbsent(endId, k -> new HashSet<>()).add(startId);
-                System.out.println("Added reverse connection: " + endId + " -> " + startId);
             }
         }
     }
@@ -94,7 +87,6 @@ public class Graph {
         if (!nodes.containsKey(id)) {
             Node node = new Node(id, 0, 0); // Placeholder coordinates
             addNode(node);
-            logger.info("Added node with id " + id);
         }
     }
 
@@ -138,12 +130,10 @@ public class Graph {
                 }
             }
         }
-        System.out.println("Nearest relevant node to " + coordinates + " is " + nearest);
         return nearest;
     }
 
     public List<Node> findShortestPath(Node start, Node end) {
-        System.out.println("Finding shortest path from " + start + " to " + end);
         // Step 1: Initialize data structures
         Map<Node, Double> distances = new HashMap<>();
         Map<Node, Node> previousNodes = new HashMap<>();
@@ -160,7 +150,6 @@ public class Graph {
         while (!queue.isEmpty()) {
             // Step 3.1: Get the node with the smallest distance
             Node current = queue.poll();
-            System.out.println("Examining node: " + current);
     
             // Step 3.2: If the current node is the end node, return the path
             if (current.equals(end)) {
@@ -169,7 +158,6 @@ public class Graph {
     
             // Step 3.3: Get the neighbors of the current node
             Set<Node> neighbors = getNeighbors(current);
-            System.out.println("Neighbors: " + neighbors);
     
             // Step 3.4: For each neighbor, calculate the new distance and update if it's shorter
             for (Node neighbor : neighbors) {                
@@ -181,13 +169,11 @@ public class Graph {
                     distances.put(neighbor, newDist);
                     previousNodes.put(neighbor, current);
                     queue.offer(neighbor);
-                    System.out.println("Updated neighbor: " + neighbor + " with distance: " + newDist);
                 }
             }
         }
     
         // Step 4: If no path is found, return an empty list
-        System.out.println("No path found");
         return null;
     }
 
@@ -198,7 +184,6 @@ public class Graph {
             path.add(0, current);
             current = previousNodes.get(current);
         }
-        System.out.println("Path found: " + path);
         return path;
     }
 
@@ -224,7 +209,6 @@ public class Graph {
     }
 
     private void printPath(List<Node> path) {
-        System.out.println("Path found:");
         for (int i = 0; i < path.size(); i++) {
             System.out.println(i + ": " + path.get(i));
         }

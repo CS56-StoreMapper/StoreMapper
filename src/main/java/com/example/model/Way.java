@@ -111,7 +111,7 @@ public record Way(Node startNode, Node endNode, Map<String, Object> data) {
         try {
             @SuppressWarnings("unchecked")
             List<?> nodeIds = (List<?>) map.get("nodes");
-            if (nodeIds == null || nodeIds.size() < 2) {
+            if (nodeIds == null || nodeIds.isEmpty()) {
                 throw new IllegalArgumentException("Way must have at least two nodes");
             }
     

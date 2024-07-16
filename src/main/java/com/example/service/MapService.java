@@ -136,7 +136,8 @@ public final class MapService {
             return null;
         }
 
-        System.out.println("Route found: " + path);
+        // Replace the existing println with:
+        System.out.println("Route found: " + path.size() + " nodes, start: " + path.get(0) + ", end: " + path.get(path.size() - 1));
         return new Route(path);
     }
 
