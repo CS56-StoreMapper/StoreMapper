@@ -52,9 +52,11 @@ public class Graph {
             addNode(node);
         }
 
+        System.out.println("Adding " + ways.size() + " ways to the graph");
         for (Way way : ways) {
             addWay(way);
         }
+        System.out.println("Graph now has " + getWayCount() + " ways");
     }
 
     public void addNode(Node node) {
@@ -66,6 +68,7 @@ public class Graph {
         Map<String, String> tags = way.getTags();
         String highwayType = tags.get("highway");
         if (highwayType == null || !ALLOWED_HIGHWAY_TYPES.contains(highwayType)) {
+            // System.out.println("Skipping way due to invalid highway type: " + highwayType);
             return;
         }
 
@@ -81,6 +84,7 @@ public class Graph {
                 adjacencyList.computeIfAbsent(endId, k -> new HashSet<>()).add(startId);
             }
         }
+        // System.out.println("Added way: " + way + ", current way count: " + getWayCount());
     }
 
     private void addNodeIfAbsent(Long id) {
@@ -216,13 +220,21 @@ public class Graph {
 
     public void printGraphStructure() {
         System.out.println("Graph Structure:");
+        System.out.println("Total nodes: " + nodes.size());
+        System.out.println("Total connections: " + getWayCount());
         for (Map.Entry<Long, Set<Long>> entry : adjacencyList.entrySet()) {
             Node node = nodes.get(entry.getKey());
             System.out.println("Node: " + node);
-            System.out.println("  Neighbors:");
-            for (Long neighborId : entry.getValue()) {
-                System.out.println("    " + nodes.get(neighborId));
-            }
+            System.out.println("  Neighbors: " + entry.getValue());
+        }
+    }
+
+    public void printNodeAdjacencyList(long nodeId) {
+        Set<Long> neighbors = adjacencyList.get(nodeId);
+        if (neighbors == null) {
+            System.out.println("No adjacency list for node " + nodeId);
+        } else {
+            System.out.println("Neighbors of node " + nodeId + ": " + neighbors);
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.example.model;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -16,7 +17,7 @@ import java.util.stream.Collectors;
 public record Way(Node startNode, Node endNode, Map<String, Object> data) {
 
     public Way {
-        data = data == null ? Map.of() : data;
+        data = data == null ? Map.of() : new HashMap<>(data);
     }
 
     /**

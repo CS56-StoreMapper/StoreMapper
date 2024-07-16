@@ -31,8 +31,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.Files;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -87,7 +89,14 @@ public abstract class BaseMapTest {
     }
     
     private List<Way> loadWaysFromFile(String filename) throws IOException {
-        return osmDataLoader.loadData(filename, Way::fromMap);
+        List<Way> ways = osmDataLoader.loadData(filename, Way::fromMap);
+        Map<String, Integer> highwayTypeCounts = new HashMap<>();
+        for (Way way : ways) {
+            String highwayType = way.getTags().get("highway");
+            highwayTypeCounts.merge(highwayType, 1, Integer::sum);
+        }
+        logger.info("Highway type counts: " + highwayTypeCounts);
+        return ways;
     }
 
     // protected void compareOutput(Coordinates start, Coordinates end, String testName, String type) {

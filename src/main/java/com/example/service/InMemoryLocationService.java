@@ -42,14 +42,14 @@ public class InMemoryLocationService implements LocationService {
     }
 
     private void initializeLocationsFromGraph() {
-        logger.info("USE_CHUNKING: " + USE_CHUNKING);
+        // logger.info("USE_CHUNKING: " + USE_CHUNKING);
         long startTime = System.currentTimeMillis();
         logInitializationStart();
         
         List<Node> allNodes = graph.getNodes();
         int totalNodes = allNodes.size();
         
-        logger.info("Total nodes in graph: " + totalNodes);
+        // logger.info("Total nodes in graph: " + totalNodes);
         
         if (USE_CHUNKING) {
             processInChunks(allNodes, totalNodes);
@@ -57,32 +57,32 @@ public class InMemoryLocationService implements LocationService {
             processAllAtOnce(allNodes, totalNodes);
         }
         
-        logger.info("Total locations after processing: " + locations.size());
+        // logger.info("Total locations after processing: " + locations.size());
         logInitializationEnd(startTime);
     }
     
     private void logInitializationStart() {
         long maxHeapSize = Runtime.getRuntime().maxMemory();
-        logger.info("Maximum heap size before initializing locations: " + (maxHeapSize / (1024 * 1024)) + " MB");
-        logger.info("Initializing locations from graph");
+        // logger.info("Maximum heap size before initializing locations: " + (maxHeapSize / (1024 * 1024)) + " MB");
+        // logger.info("Initializing locations from graph");
     }
     
     private void logInitializationEnd(long startTime) {
         long endTime = System.currentTimeMillis();
-        logger.info("Initialized " + locations.size() + " locations in " + (endTime - startTime) + " ms");
+        // logger.info("Initialized " + locations.size() + " locations in " + (endTime - startTime) + " ms");
     }
 
     private void processInChunks(List<Node> allNodes, int totalNodes) {
-        logger.info("Starting processInChunks with " + totalNodes + " total nodes");
+        // logger.info("Starting processInChunks with " + totalNodes + " total nodes");
         int processedNodes = 0;
         int chunkCount = 0;
         while (processedNodes < totalNodes && shouldContinueProcessing()) {
-            logger.info("Processing chunk " + (++chunkCount) + ". Nodes processed so far: " + processedNodes);
+            // logger.info("Processing chunk " + (++chunkCount) + ". Nodes processed so far: " + processedNodes);
             processedNodes = processChunk(allNodes, totalNodes, processedNodes);
             performMemoryManagement();
-            logger.info("Finished processing chunk " + chunkCount + ". Total nodes processed: " + processedNodes);
+            // logger.info("Finished processing chunk " + chunkCount + ". Total nodes processed: " + processedNodes);
         }
-        logger.info("Completed processInChunks. Total chunks processed: " + chunkCount + ", Total nodes processed: " + processedNodes);
+        // logger.info("Completed processInChunks. Total chunks processed: " + chunkCount + ", Total nodes processed: " + processedNodes);
     }
     
     private int processChunk(List<Node> allNodes, int totalNodes, int processedNodes) {
@@ -90,7 +90,7 @@ public class InMemoryLocationService implements LocationService {
         int end = Math.min(processedNodes + chunkSize, totalNodes);
         List<Node> chunk = allNodes.subList(processedNodes, end);
         processNodeChunk(chunk);
-        logger.info("Processed " + end + " out of " + totalNodes + " nodes");
+        // logger.info("Processed " + end + " out of " + totalNodes + " nodes");
         logMemoryUsage();
         return end;
     }
@@ -127,33 +127,33 @@ public class InMemoryLocationService implements LocationService {
     }
 
     private void processAllAtOnce(List<Node> allNodes, int totalNodes) {
-        logger.info("Starting processAllAtOnce with " + totalNodes + " nodes");
+        // logger.info("Starting processAllAtOnce with " + totalNodes + " nodes");
         processNodeChunk(allNodes);
-        logger.info("Finished processAllAtOnce. Total locations: " + locations.size());
+        // logger.info("Finished processAllAtOnce. Total locations: " + locations.size());
     }
     
     private void processNodeChunk(List<Node> nodes) {
-        logger.info("Starting processNodeChunk with " + nodes.size() + " nodes");
+        // logger.info("Starting processNodeChunk with " + nodes.size() + " nodes");
         for (Node node : nodes) {
             try {
                 Location location = createLocation(node);
                 locations.put(node.id(), location);
-                logger.info("Added location: " + location.getId() + " of type " + location.getClass().getSimpleName());
+                // logger.info("Added location: " + location.getId() + " of type " + location.getClass().getSimpleName());
             } catch (Exception e) {
                 logger.warning("Error processing node " + node.id() + ": " + e.getMessage());
                 e.printStackTrace(); // Add this line to print the full stack trace
             }
         }
-        logger.info("Finished processNodeChunk. Total locations: " + locations.size());
+        // logger.info("Finished processNodeChunk. Total locations: " + locations.size());
     }
 
     private Location createLocation(Node node) {
         String type = node.tags().getOrDefault("type", "unknown");
-        logger.info("Creating location for node " + node.id() + " with type " + type);
+        // logger.info("Creating location for node " + node.id() + " with type " + type);
         Location location = "store".equals(type) 
             ? new Store(node.id(), node.lat(), node.lon(), node)
             : new Restaurant(node.id(), node.lat(), node.lon(), node);
-        logger.info("Created location: " + location.getId() + " of type " + location.getClass().getSimpleName());
+        // logger.info("Created location: " + location.getId() + " of type " + location.getClass().getSimpleName());
         return location;
     }
     
@@ -204,11 +204,11 @@ public class InMemoryLocationService implements LocationService {
         long usedMemory = totalMemory - freeMemory;
         long availableMemory = maxMemory - usedMemory;
         
-        logger.info("Maximum heap size: " + (maxMemory / (1024 * 1024)) + " MB");
-        logger.info("Total memory: " + (totalMemory / (1024 * 1024)) + " MB");
-        logger.info("Free memory: " + (freeMemory / (1024 * 1024)) + " MB");
-        logger.info("Used memory: " + (usedMemory / (1024 * 1024)) + " MB");
-        logger.info("Available memory: " + (availableMemory / (1024 * 1024)) + " MB");
+        // logger.info("Maximum heap size: " + (maxMemory / (1024 * 1024)) + " MB");
+        // logger.info("Total memory: " + (totalMemory / (1024 * 1024)) + " MB");
+        // logger.info("Free memory: " + (freeMemory / (1024 * 1024)) + " MB");
+        // logger.info("Used memory: " + (usedMemory / (1024 * 1024)) + " MB");
+        // logger.info("Available memory: " + (availableMemory / (1024 * 1024)) + " MB");
         
         return availableMemory < MEMORY_THRESHOLD;
     }
