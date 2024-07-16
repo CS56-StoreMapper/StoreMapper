@@ -19,6 +19,9 @@ import java.util.logging.Logger;
 
 public class InMemoryLocationService implements LocationService {
     private static final Logger logger = Logger.getLogger(InMemoryLocationService.class.getName());
+    private static final int CHUNK_SIZE = 100000; // Increased chunk size
+    private static final long MEMORY_THRESHOLD = 100 * 1024 * 1024; // 100 MB
+    
     
     private final Map<Long, Location> locations;
     private final Graph graph;
@@ -37,7 +40,40 @@ public class InMemoryLocationService implements LocationService {
 
     private void initializeLocationsFromGraph() {
         logger.info("Initializing locations from graph");
-        for (Node node : graph.getNodes()) {
+        List<Node> allNodes = graph.getNodes();
+        int totalNodes = allNodes.size();
+
+        if (isLowMemory()) {
+            processInChunks(allNodes, totalNodes);
+        } else {
+            processAllAtOnce(allNodes, totalNodes);
+        }
+
+        logger.info("Initialized " + locations.size() + " locations");
+    }
+
+    private void processInChunks(List<Node> allNodes, int totalNodes) {
+        int processedNodes = 0;
+        for (int i = 0; i < totalNodes; i += CHUNK_SIZE) {
+            int end = Math.min(i + CHUNK_SIZE, totalNodes);
+            List<Node> chunk = allNodes.subList(i, end);
+            processNodeChunk(chunk);
+            processedNodes += chunk.size();
+            logger.info("Processed " + processedNodes + " out of " + totalNodes + " nodes");
+            
+            if (isLowMemory()) {
+                System.gc();
+            }
+        }
+    }
+
+    private void processAllAtOnce(List<Node> allNodes, int totalNodes) {
+        processNodeChunk(allNodes);
+        logger.info("Processed all " + totalNodes + " nodes at once");
+    }
+
+    private void processNodeChunk(List<Node> nodes) {
+        for (Node node : nodes) {
             Location location;
             if ("store".equals(node.tags().get("type"))) {
                 location = new Store(node.id(), node.lat(), node.lon(), node);
@@ -46,7 +82,12 @@ public class InMemoryLocationService implements LocationService {
             }
             locations.put(node.id(), location);
         }
-        logger.info("Initialized " + locations.size() + " locations");
+    }
+
+    private boolean isLowMemory() {
+        Runtime runtime = Runtime.getRuntime();
+        long freeMemory = runtime.freeMemory();
+        return freeMemory < MEMORY_THRESHOLD;
     }
 
     @Override
