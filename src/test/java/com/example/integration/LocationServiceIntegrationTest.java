@@ -49,21 +49,21 @@ public class LocationServiceIntegrationTest {
         List<Node> nodes = testGraph.getNodes();
         assertFalse(nodes.isEmpty(), "Graph should have nodes");
         
-        System.out.println("Total nodes in graph: " + nodes.size());
-        System.out.println("Total ways in graph: " + testGraph.getWayCount());
+        // System.out.println("Total nodes in graph: " + nodes.size());
+        // System.out.println("Total ways in graph: " + testGraph.getWayCount());
         
         // Test that each node has at least one neighbor
         for (Node node : nodes) {
             Set<Node> neighbors = testGraph.getNeighbors(node);
-            System.out.println("Node " + node.id() + " has " + neighbors.size() + " neighbors");
+            // System.out.println("Node " + node.id() + " has " + neighbors.size() + " neighbors");
             if (neighbors.isEmpty()) {
-                System.out.println("Node with no neighbors: " + node);
+                // System.out.println("Node with no neighbors: " + node);
                 testGraph.printNodeAdjacencyList(node.id());
             }
             assertFalse(neighbors.isEmpty(), "Each node should have at least one neighbor. Node: " + node);
         }
         
-        testGraph.printGraphStructure();
+        // testGraph.printGraphStructure();
     }
 
     @Test

@@ -79,7 +79,7 @@ public final class TestDataGenerator {
         data.put("tags", tags);
 
         Way way = new Way(nodes.get(0), nodes.get(nodes.size() - 1), data);
-        System.out.println("Created way: " + way);
+        // System.out.println("Created way: " + way);
         return way;
     }
 

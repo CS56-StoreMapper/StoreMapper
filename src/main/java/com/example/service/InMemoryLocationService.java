@@ -21,13 +21,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class InMemoryLocationService implements LocationService {
     private static final Logger logger = Logger.getLogger(InMemoryLocationService.class.getName());
     private static final double MEMORY_USAGE_THRESHOLD = 0.75;
-    private static final int GC_PAUSE_TIME = 1000; // milliseconds
-    private static final int MIN_CHUNK_SIZE = 10000;
-    private static final int MAX_CHUNK_SIZE = 100000;
     private static final boolean USE_CHUNKING = Boolean.getBoolean("app.use.chunking");
     private static final long MEMORY_THRESHOLD = Runtime.getRuntime().maxMemory() / 4; // 25% of max heap
 
-    
     private final Map<Long, Location> locations;
     private final Graph graph;
 
@@ -42,177 +38,40 @@ public class InMemoryLocationService implements LocationService {
     }
 
     private void initializeLocationsFromGraph() {
-        // logger.info("USE_CHUNKING: " + USE_CHUNKING);
-        long startTime = System.currentTimeMillis();
-        logInitializationStart();
-        
         List<Node> allNodes = graph.getNodes();
         int totalNodes = allNodes.size();
         
-        // logger.info("Total nodes in graph: " + totalNodes);
-        
         if (USE_CHUNKING) {
-            processInChunks(allNodes, totalNodes);
+            new ChunkProcessor().processInChunks(allNodes, totalNodes);
         } else {
-            processAllAtOnce(allNodes, totalNodes);
+            processNodeChunk(allNodes);
         }
-        
-        // logger.info("Total locations after processing: " + locations.size());
-        logInitializationEnd(startTime);
-    }
-    
-    private void logInitializationStart() {
-        long maxHeapSize = Runtime.getRuntime().maxMemory();
-        // logger.info("Maximum heap size before initializing locations: " + (maxHeapSize / (1024 * 1024)) + " MB");
-        // logger.info("Initializing locations from graph");
-    }
-    
-    private void logInitializationEnd(long startTime) {
-        long endTime = System.currentTimeMillis();
-        // logger.info("Initialized " + locations.size() + " locations in " + (endTime - startTime) + " ms");
+
+        logger.info("Initialized locations from graph with " + locations.size() + " nodes");
     }
 
-    private void processInChunks(List<Node> allNodes, int totalNodes) {
-        // logger.info("Starting processInChunks with " + totalNodes + " total nodes");
-        int processedNodes = 0;
-        int chunkCount = 0;
-        while (processedNodes < totalNodes && shouldContinueProcessing()) {
-            // logger.info("Processing chunk " + (++chunkCount) + ". Nodes processed so far: " + processedNodes);
-            processedNodes = processChunk(allNodes, totalNodes, processedNodes);
-            performMemoryManagement();
-            // logger.info("Finished processing chunk " + chunkCount + ". Total nodes processed: " + processedNodes);
-        }
-        // logger.info("Completed processInChunks. Total chunks processed: " + chunkCount + ", Total nodes processed: " + processedNodes);
-    }
-    
-    private int processChunk(List<Node> allNodes, int totalNodes, int processedNodes) {
-        int chunkSize = calculateChunkSize();
-        int end = Math.min(processedNodes + chunkSize, totalNodes);
-        List<Node> chunk = allNodes.subList(processedNodes, end);
-        processNodeChunk(chunk);
-        // logger.info("Processed " + end + " out of " + totalNodes + " nodes");
-        logMemoryUsage();
-        return end;
-    }
-    
-    private void performMemoryManagement() {
-        if (isLowMemory()) {
-            logger.info("Low memory detected. Triggering garbage collection.");
-            compactLocationMap();
-            System.gc();
-            try {
-                Thread.sleep(GC_PAUSE_TIME);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-    }
-
-    private void compactLocationMap() {
-        Map<Long, Location> compactMap = new HashMap<>(locations);
-        locations.clear();
-        locations.putAll(compactMap);
-        logger.info("Compacted location map. New size: " + locations.size());
-    }
-
-    private int calculateChunkSize() {
-        long freeMemory = Runtime.getRuntime().freeMemory();
-        return Math.toIntExact(Math.max(MIN_CHUNK_SIZE, Math.min(freeMemory / 100, MAX_CHUNK_SIZE)));
-    }
-
-    private boolean shouldContinueProcessing() {
-        Runtime runtime = Runtime.getRuntime();
-        long usedMemory = runtime.totalMemory() - runtime.freeMemory();
-        return usedMemory < runtime.maxMemory() * 0.75; // Continue if less than 75% memory used
-    }
-
-    private void processAllAtOnce(List<Node> allNodes, int totalNodes) {
-        // logger.info("Starting processAllAtOnce with " + totalNodes + " nodes");
-        processNodeChunk(allNodes);
-        // logger.info("Finished processAllAtOnce. Total locations: " + locations.size());
-    }
     
     private void processNodeChunk(List<Node> nodes) {
-        // logger.info("Starting processNodeChunk with " + nodes.size() + " nodes");
         for (Node node : nodes) {
             try {
                 Location location = createLocation(node);
                 locations.put(node.id(), location);
-                // logger.info("Added location: " + location.getId() + " of type " + location.getClass().getSimpleName());
             } catch (Exception e) {
                 logger.warning("Error processing node " + node.id() + ": " + e.getMessage());
-                e.printStackTrace(); // Add this line to print the full stack trace
+                e.printStackTrace();
             }
         }
-        // logger.info("Finished processNodeChunk. Total locations: " + locations.size());
     }
 
     private Location createLocation(Node node) {
         String type = node.tags().getOrDefault("type", "unknown");
-        // logger.info("Creating location for node " + node.id() + " with type " + type);
-        Location location = "store".equals(type) 
+        return "store".equals(type) 
             ? new Store(node.id(), node.lat(), node.lon(), node)
             : new Restaurant(node.id(), node.lat(), node.lon(), node);
-        // logger.info("Created location: " + location.getId() + " of type " + location.getClass().getSimpleName());
-        return location;
-    }
-    
-    // private void processNode(Node node, long memoryPerNode) {
-    //     if (Runtime.getRuntime().freeMemory() < memoryPerNode * 2) {
-    //         clearCacheIfNeeded();
-    //     }
-    //     try {
-    //         Location location = createLocation(node);
-    //         locations.put(node.id(), location);
-    //     } catch (Exception e) {
-    //         logger.warning("Error processing node " + node.id() + ": " + e.getMessage());
-    //     }
-    // }
-
-    // private long estimateMemoryPerNode() {
-    //     if (locations.isEmpty()) return 0;
-    //     Runtime runtime = Runtime.getRuntime();
-    //     long usedMemory = runtime.totalMemory() - runtime.freeMemory();
-    //     return usedMemory / locations.size();
-    // }
-
-    // private void clearCacheIfNeeded() {
-    //     if (isLowMemory()) {
-    //         logger.info("Low memory detected. Clearing location cache.");
-    //         locations.clear();
-    //         System.gc();
-    //     }
-    // }    
-
-    private void logMemoryUsage() {
-        Runtime runtime = Runtime.getRuntime();
-        long totalMemory = runtime.totalMemory();
-        long freeMemory = runtime.freeMemory();
-        long maxMemory = runtime.maxMemory();
-        logger.info("Memory Usage: " +
-                    "Total: " + (totalMemory / 1048576) + " MB, " +
-                    "Free: " + (freeMemory / 1048576) + " MB, " +
-                    "Max: " + (maxMemory / 1048576) + " MB, " +
-                    "Used: " + ((totalMemory - freeMemory) / 1048576) + " MB");
     }
 
-    private boolean isLowMemory() {
-        Runtime runtime = Runtime.getRuntime();
-        long maxMemory = runtime.maxMemory();
-        long totalMemory = runtime.totalMemory();
-        long freeMemory = runtime.freeMemory();
-        long usedMemory = totalMemory - freeMemory;
-        long availableMemory = maxMemory - usedMemory;
-        
-        // logger.info("Maximum heap size: " + (maxMemory / (1024 * 1024)) + " MB");
-        // logger.info("Total memory: " + (totalMemory / (1024 * 1024)) + " MB");
-        // logger.info("Free memory: " + (freeMemory / (1024 * 1024)) + " MB");
-        // logger.info("Used memory: " + (usedMemory / (1024 * 1024)) + " MB");
-        // logger.info("Available memory: " + (availableMemory / (1024 * 1024)) + " MB");
-        
-        return availableMemory < MEMORY_THRESHOLD;
-    }
 
+    // LocationService interface methods
     @Override
     public List<Location> getAllLocations() {
         return new ArrayList<>(locations.values());
@@ -275,5 +134,80 @@ public class InMemoryLocationService implements LocationService {
     @Override
     public Graph getGraph() {
         return this.graph;
+    }
+
+    private class ChunkProcessor {
+        private static final int MIN_CHUNK_SIZE = 10000;
+        private static final int MAX_CHUNK_SIZE = 100000;
+        private static final int GC_PAUSE_TIME = 1000; // milliseconds
+    
+        void processInChunks(List<Node> allNodes, int totalNodes) {
+            int processedNodes = 0;
+            while (processedNodes < totalNodes && shouldContinueProcessing()) {
+                processedNodes = processChunk(allNodes, totalNodes, processedNodes);
+                performMemoryManagement();
+            }
+        }
+        
+        private int processChunk(List<Node> allNodes, int totalNodes, int processedNodes) {
+            int chunkSize = calculateChunkSize();
+            int end = Math.min(processedNodes + chunkSize, totalNodes);
+            List<Node> chunk = allNodes.subList(processedNodes, end);
+            processNodeChunk(chunk);
+            logMemoryUsage();
+            return end;
+        }
+        
+        private void performMemoryManagement() {
+            if (isLowMemory()) {
+                compactLocationMap();
+                System.gc();
+                try {
+                    Thread.sleep(GC_PAUSE_TIME);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+    
+        private int calculateChunkSize() {
+            long freeMemory = Runtime.getRuntime().freeMemory();
+            return Math.toIntExact(Math.max(MIN_CHUNK_SIZE, Math.min(freeMemory / 100, MAX_CHUNK_SIZE)));
+        }
+    
+        private boolean shouldContinueProcessing() {
+            Runtime runtime = Runtime.getRuntime();
+            long usedMemory = runtime.totalMemory() - runtime.freeMemory();
+            return usedMemory < runtime.maxMemory() * MEMORY_USAGE_THRESHOLD;
+        }
+    }
+
+    private void compactLocationMap() {
+        Map<Long, Location> compactMap = new HashMap<>(locations);
+        locations.clear();
+        locations.putAll(compactMap);
+    }
+
+    private void logMemoryUsage() {
+        Runtime runtime = Runtime.getRuntime();
+        long totalMemory = runtime.totalMemory();
+        long freeMemory = runtime.freeMemory();
+        long maxMemory = runtime.maxMemory();
+        logger.info("Memory Usage: " +
+                    "Total: " + (totalMemory / 1048576) + " MB, " +
+                    "Free: " + (freeMemory / 1048576) + " MB, " +
+                    "Max: " + (maxMemory / 1048576) + " MB, " +
+                    "Used: " + ((totalMemory - freeMemory) / 1048576) + " MB");
+    }
+
+    private boolean isLowMemory() {
+        Runtime runtime = Runtime.getRuntime();
+        long maxMemory = runtime.maxMemory();
+        long totalMemory = runtime.totalMemory();
+        long freeMemory = runtime.freeMemory();
+        long usedMemory = totalMemory - freeMemory;
+        long availableMemory = maxMemory - usedMemory;
+        
+        return availableMemory < MEMORY_THRESHOLD;
     }
 }
