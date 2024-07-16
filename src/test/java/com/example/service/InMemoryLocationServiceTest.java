@@ -36,6 +36,12 @@ public class InMemoryLocationServiceTest {
         // Create a simple graph with these nodes
         Graph graph = new Graph(nodes, ways);
         System.out.println("Created test graph with " + nodes.size() + " nodes");
+        
+        // Print out details of each node
+        for (Node node : nodes) {
+            System.out.println("Node: " + node.id() + ", Type: " + node.tags().getOrDefault("type", "unknown"));
+        }
+        
         return graph;
     }
 

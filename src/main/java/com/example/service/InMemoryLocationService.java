@@ -42,6 +42,7 @@ public class InMemoryLocationService implements LocationService {
     }
 
     private void initializeLocationsFromGraph() {
+        logger.info("USE_CHUNKING: " + USE_CHUNKING);
         long startTime = System.currentTimeMillis();
         logInitializationStart();
         
@@ -170,13 +171,13 @@ public class InMemoryLocationService implements LocationService {
     //     return usedMemory / locations.size();
     // }
 
-    private void clearCacheIfNeeded() {
-        if (isLowMemory()) {
-            logger.info("Low memory detected. Clearing location cache.");
-            locations.clear();
-            System.gc();
-        }
-    }    
+    // private void clearCacheIfNeeded() {
+    //     if (isLowMemory()) {
+    //         logger.info("Low memory detected. Clearing location cache.");
+    //         locations.clear();
+    //         System.gc();
+    //     }
+    // }    
 
     private void logMemoryUsage() {
         Runtime runtime = Runtime.getRuntime();
