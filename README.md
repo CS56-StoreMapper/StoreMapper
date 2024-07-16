@@ -47,20 +47,17 @@ mvn clean install
 
 ## Design Documentation
 
-## Design Documentation
-
 Our project includes several key design documents:
 
-1. `docs/architecture.md`: A comprehensive overview of the StoreMapper architecture, including the class diagram, key components, data flow, design decisions, and future considerations. This document reflects the current state of the project, including the integration of OpenStreetMap data structures.
+1. [`docs/architecture.md`](docs/architecture.md): A comprehensive overview of the StoreMapper architecture, including the class diagram, key components, data flow, design decisions, and future considerations. This document reflects the current state of the project, including the integration of OpenStreetMap data structures.
 
-2. `docs/ClassDiagramPostOSM.puml`: A UML class diagram representing the current project structure. To view this file, use a PlantUML viewer or online tools like [PlantUML Web Server](http://www.plantuml.com/plantuml/uml/).
+2. [`docs/ClassDiagramPostOSM.puml`](docs/ClassDiagramPostOSM.puml): A UML class diagram representing the current project structure. To view this file, use a PlantUML viewer or online tools like [PlantUML Web Server](http://www.plantuml.com/plantuml/uml/).
 
-3. `docs/class_diagram_summary.md`: A detailed explanation of the pre-OSM class diagram, including rationale for design decisions and implementation approach. While some aspects may be outdated, it provides historical context for the project's evolution.
+3. [`docs/class_diagram_summary.md`](docs/class_diagram_summary.md): A detailed explanation of the pre-OSM class diagram, including rationale for design decisions and implementation approach. While some aspects may be outdated, it provides historical context for the project's evolution.
 
-4. `docs/adding_node_way.md`: An integration plan and roadmap for OSM data structures, reflecting the current state of the project and future development plans.
+4. [`docs/adding_node_way.md`](docs/adding_node_way.md): An integration plan and roadmap for OSM data structures, reflecting the current state of the project and future development plans.
 
 These documents serve as a reference for our project's architecture and design principles. Please refer to them when making significant changes to the project structure.
-
 
 ## Development Roadmap
 
