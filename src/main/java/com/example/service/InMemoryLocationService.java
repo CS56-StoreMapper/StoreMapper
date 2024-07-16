@@ -48,12 +48,15 @@ public class InMemoryLocationService implements LocationService {
         List<Node> allNodes = graph.getNodes();
         int totalNodes = allNodes.size();
         
+        logger.info("Total nodes in graph: " + totalNodes);
+        
         if (USE_CHUNKING) {
             processInChunks(allNodes, totalNodes);
         } else {
             processAllAtOnce(allNodes, totalNodes);
         }
         
+        logger.info("Total locations after processing: " + locations.size());
         logInitializationEnd(startTime);
     }
     
@@ -123,9 +126,13 @@ public class InMemoryLocationService implements LocationService {
     }
 
     private void processNodeChunk(List<Node> nodes) {
-        long memoryPerNode = estimateMemoryPerNode();
         for (Node node : nodes) {
-            processNode(node, memoryPerNode);
+            try {
+                Location location = createLocation(node);
+                locations.put(node.id(), location);
+            } catch (Exception e) {
+                logger.warning("Error processing node " + node.id() + ": " + e.getMessage());
+            }
         }
     }
     
@@ -142,7 +149,8 @@ public class InMemoryLocationService implements LocationService {
     }
     
     private Location createLocation(Node node) {
-        return "store".equals(node.tags().get("type")) 
+        String type = node.tags().getOrDefault("type", "unknown");
+        return "store".equals(type) 
             ? new Store(node.id(), node.lat(), node.lon(), node)
             : new Restaurant(node.id(), node.lat(), node.lon(), node);
     }

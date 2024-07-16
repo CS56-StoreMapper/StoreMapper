@@ -38,6 +38,14 @@ public class InMemoryLocationServiceTest {
     }
 
     @Test
+    public void testInitialization() {
+        assertEquals(3, service.getAllLocations().size(), "Should have initialized 3 locations");
+        assertNotNull(service.getLocationById(1L), "Location with ID 1 should exist");
+        assertNotNull(service.getLocationById(2L), "Location with ID 2 should exist");
+        assertNotNull(service.getLocationById(3L), "Location with ID 3 should exist");
+    }
+
+    @Test
     public void testGetAllLocations() {
         List<Location> allLocations = service.getAllLocations();
         assertEquals(3, allLocations.size());
