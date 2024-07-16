@@ -3,6 +3,10 @@ package com.example.util;
 import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.util.function.Function;
 
 public class OSMDataLoader {
@@ -29,20 +33,34 @@ public class OSMDataLoader {
      * @throws IOException If there's an error reading the file (except EOFException).
      * @throws ClassNotFoundException If the class of a serialized object cannot be found.
      */
-    public <T> List<T> loadData(String filename, Function<Map<String, Object>, T> mapper) throws IOException, ClassNotFoundException {
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filename))) {
-            List<T> items = new ArrayList<>();
-            while (true) {
-                try {
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> dataMap = (Map<String, Object>) ois.readObject();
-                    items.add(mapper.apply(dataMap));
-                } catch (EOFException e) {
-                    break;
-                }
-            }
-            return items;
-        }
+    // public <T> List<T> loadData(String filename, Function<Map<String, Object>, T> mapper) throws IOException, ClassNotFoundException {
+    //     try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filename))) {
+    //         List<T> items = new ArrayList<>();
+    //         while (true) {
+    //             try {
+    //                 @SuppressWarnings("unchecked")
+    //                 Map<String, Object> dataMap = (Map<String, Object>) ois.readObject();
+    //                 items.add(mapper.apply(dataMap));
+    //             } catch (EOFException e) {
+    //                 break;
+    //             }
+    //         }
+    //         return items;
+    //     }
+    // }
+
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    public <T> List<T> loadData(String filename, Function<Map<String, Object>, T> mapper) throws IOException {
+        List<Map<String, Object>> dataList = objectMapper.readValue(new File(filename), 
+                                             new TypeReference<List<Map<String, Object>>>() {});
+        return dataList.stream()
+                       .map(mapper)
+                       .toList();
+    }
+
+    public <T> void saveData(List<T> items, String filename) throws IOException {
+        objectMapper.writeValue(new File(filename), items);
     }
 
     /**

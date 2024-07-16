@@ -46,8 +46,8 @@ public abstract class BaseMapTest {
     @BeforeAll
     public void setUp() throws IOException, ClassNotFoundException {
         String datasetName = getDatasetName();
-        String nodesFile = System.getProperty("user.dir") + "/data/" + datasetName + ".nodes.ser";
-        String waysFile = System.getProperty("user.dir") + "/data/" + datasetName + ".ways.ser";
+        String nodesFile = System.getProperty("user.dir") + "/data/" + datasetName + ".nodes.json";
+        String waysFile = System.getProperty("user.dir") + "/data/" + datasetName + ".ways.json";
         
         logger.info("Loading nodes from: " + nodesFile);
         List<Node> nodes = loadNodesFromFile(nodesFile);
