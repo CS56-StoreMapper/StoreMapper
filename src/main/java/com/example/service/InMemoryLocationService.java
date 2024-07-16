@@ -73,11 +73,16 @@ public class InMemoryLocationService implements LocationService {
     }
 
     private void processInChunks(List<Node> allNodes, int totalNodes) {
+        logger.info("Starting processInChunks with " + totalNodes + " total nodes");
         int processedNodes = 0;
+        int chunkCount = 0;
         while (processedNodes < totalNodes && shouldContinueProcessing()) {
+            logger.info("Processing chunk " + (++chunkCount) + ". Nodes processed so far: " + processedNodes);
             processedNodes = processChunk(allNodes, totalNodes, processedNodes);
             performMemoryManagement();
+            logger.info("Finished processing chunk " + chunkCount + ". Total nodes processed: " + processedNodes);
         }
+        logger.info("Completed processInChunks. Total chunks processed: " + chunkCount + ", Total nodes processed: " + processedNodes);
     }
     
     private int processChunk(List<Node> allNodes, int totalNodes, int processedNodes) {
