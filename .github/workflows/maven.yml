@@ -13,23 +13,39 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
+    - name: Check Git LFS status
+      run: git lfs status
+    
+    - name: List repository contents
+      run: ls -lR
+    
+    - name: Check file types
+      run: |
+        for file in data/*.json; do
+          echo "File: $file"
+          file "$file"
+          echo "First few lines:"
+          head -n 5 "$file"
+          echo "-------------------"
+        done
+    
     - name: Set up JDK 21
       uses: actions/setup-java@v3
-      continue-on-error: true
       with:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
     
-    - name: Ensure data files are present
+    - name: Ensure data files are present and up-to-date
       run: |
         mkdir -p data
         for file in cambridge.nodes.json cambridge.ways.json midwest.nodes.json midwest.ways.json mit.nodes.json mit.ways.json; do
-          if [ ! -f "data/$file" ] || [ ! -s "data/$file" ]; then
+          echo "Checking $file"
+          if [ ! -f "data/$file" ] || [ ! -s "data/$file" ] || [ "$(wc -c < "data/$file")" -lt 1000 ]; then
             echo "Downloading $file from external source"
             curl -o "data/$file" "https://pub-dacce4b1e1694983965461fa4da90666.r2.dev/$file"
           else
-            echo "$file is present and not empty"
+            echo "$file is present and not empty ($(wc -c < "data/$file") bytes)"
           fi
         done
     
