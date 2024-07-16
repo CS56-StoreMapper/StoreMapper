@@ -4,8 +4,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.logging.Logger;
 
-
-
 public class Graph {
     private static final Logger logger = Logger.getLogger(Graph.class.getName());
 
