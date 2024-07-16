@@ -36,7 +36,7 @@ jobs:
         distribution: 'temurin'
         cache: maven
     
-    - name: Ensure data files are present and up-to-date
+    - name: Ensure data files are present and up-to-date 
       run: |
         mkdir -p data
         for file in cambridge.nodes.json cambridge.ways.json midwest.nodes.json midwest.ways.json mit.nodes.json mit.ways.json; do
