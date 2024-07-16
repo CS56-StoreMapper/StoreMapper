@@ -69,8 +69,9 @@ public class Graph {
     }
 
     public void addWay(Way way) {
-        String highwayType = way.getTags().get("highway");
-        if (!ALLOWED_HIGHWAY_TYPES.contains(highwayType)) {
+        Map<String, String> tags = way.getTags();
+        String highwayType = tags.get("highway");
+        if (highwayType == null || !ALLOWED_HIGHWAY_TYPES.contains(highwayType)) {
             System.out.println("Skipping way with illegal highway type: " + highwayType);
             return;
         }
@@ -108,7 +109,11 @@ public class Graph {
     }
 
     public Set<Node> getNeighbors(Node node) {
-        return adjacencyList.get(node.id()).stream()
+        Set<Long> neighborIds = adjacencyList.get(node.id());
+        if (neighborIds == null) {
+            return Collections.emptySet();
+        }
+        return neighborIds.stream()
                 .map(this::getNode)
                 .collect(Collectors.toSet());
     }
@@ -185,7 +190,7 @@ public class Graph {
     
         // Step 4: If no path is found, return an empty list
         System.out.println("No path found");
-        return Collections.emptyList();
+        return null;
     }
 
     private List<Node> reconstructPath(Map<Node, Node> previousNodes, Node end) {

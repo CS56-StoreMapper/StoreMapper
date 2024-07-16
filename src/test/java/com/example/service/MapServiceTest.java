@@ -3,6 +3,7 @@ package com.example.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,24 +37,29 @@ class MapServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        graph = new Graph();
-        // Add some nodes and ways to the graph for testing
+        List<Node> nodes = new ArrayList<>();
         Node node1 = new Node(1, 34.0522, -118.2437);
         Node node2 = new Node(2, 34.0523, -118.2438);
         Node node3 = new Node(3, 34.0524, -118.2439);
-        graph.addNode(node1);
-        graph.addNode(node2);
-        graph.addNode(node3);
+        nodes.add(node1);
+        nodes.add(node2);
+        nodes.add(node3);
 
+        List<Way> ways = new ArrayList<>();
         Map<String, Object> wayData1 = new HashMap<>();
-        wayData1.put("tags", Map.of("highway", "residential", "oneway", "no"));
+        wayData1.put("tags", Map.of("highway", "residential"));
+        wayData1.put("nodes", Arrays.asList(1L, 2L));
+        ways.add(new Way(node1, node2, wayData1));
+
         Map<String, Object> wayData2 = new HashMap<>();
-        wayData2.put("tags", Map.of("highway", "residential", "oneway", "no"));
-        
-        graph.addWay(new Way(node1, node2, wayData1));
-        graph.addWay(new Way(node2, node3, wayData2));
-        
+        wayData2.put("tags", Map.of("highway", "residential"));
+        wayData2.put("nodes", Arrays.asList(2L, 3L));
+        ways.add(new Way(node2, node3, wayData2));
+
+        graph = new Graph(nodes, ways);
         mapService = new MapService(locationService, graph);
+
+        System.out.println("Graph initialized with " + graph.getNodeCount() + " nodes and " + graph.getWayCount() + " ways");
     }
 
     @Nested
@@ -178,8 +184,8 @@ class MapServiceTest {
     class CalculateRouteTests {
         @Test
         void testBasicRoute() {
-            Location start = new Store(1, "Start", new Coordinates(34.0522, -118.2437));
-            Location end = new Store(2, "End", new Coordinates(34.0524, -118.2439));
+            Coordinates start = new Coordinates(34.0522, -118.2437);
+            Coordinates end = new Coordinates(34.0524, -118.2439);
             
             Route route = mapService.calculateRoute(start, end);
             
@@ -189,15 +195,23 @@ class MapServiceTest {
         }
 
         @Test
-        void testRouteWithCoordinates() {
+        void testRouteWithSameStartAndEnd() {
             Coordinates start = new Coordinates(34.0522, -118.2437);
-            Coordinates end = new Coordinates(34.0524, -118.2439);
+            Coordinates end = new Coordinates(34.0522, -118.2437);
             
             Route route = mapService.calculateRoute(start, end);
             
-            assertNotNull(route);
-            assertEquals(3, route.getNodes().size());
-            assertTrue(route.getTotalDistance() > 0);
+            assertNull(route, "Expected null route when start and end are the same");
+        }
+
+        @Test
+        void testRouteWithUnreachableEnd() {
+            Coordinates start = new Coordinates(34.0522, -118.2437);
+            Coordinates end = new Coordinates(40.7128, -74.0060); // New York City coordinates
+            
+            Route route = mapService.calculateRoute(start, end);
+            
+            assertNull(route, "Expected null route when end is unreachable");
         }
     }
 
@@ -208,7 +222,7 @@ class MapServiceTest {
 
     @Test
     void testGetWayCount() {
-        assertEquals(2, mapService.getWayCount(), "Expected 2 ways (counting bidirectional ways only once)");
+        assertEquals(2, mapService.getWayCount(), "Expected 2 ways in the graph");
     }
 
 }

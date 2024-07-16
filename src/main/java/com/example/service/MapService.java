@@ -22,6 +22,8 @@ public final class MapService {
     private final LocationService locationService;
     private final Graph graph;
 
+    private static final double MAX_DISTANCE_KM = 1.0; // Maximum distance to consider a point reachable
+
     /**
      * Constructs a new MapService.
      *
@@ -107,6 +109,9 @@ public final class MapService {
         Node startNode = graph.findNearestRelevantNode(start);
         Node endNode = graph.findNearestRelevantNode(end);
 
+        System.out.println("Nearest relevant node to " + start + " is " + startNode);
+        System.out.println("Nearest relevant node to " + end + " is " + endNode);
+
         if (startNode == null || endNode == null) {
             System.out.println("No route possible: start or end nodes not found");
             return null;
@@ -115,6 +120,12 @@ public final class MapService {
 
         if (startNode.equals(endNode)) {
             System.out.println("Start and end nodes are the same");
+            return null;
+        }
+
+        // Check if end point is too far from the nearest node
+        if (end.distanceTo(new Coordinates(endNode.lat(), endNode.lon())) > MAX_DISTANCE_KM) {
+            System.out.println("End point is too far from the nearest node");
             return null;
         }
 

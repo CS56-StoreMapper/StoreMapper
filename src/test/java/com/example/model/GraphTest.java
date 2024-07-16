@@ -52,36 +52,85 @@ class GraphTest {
     class WayOperations {
         @Test
         void testAddWay() {
+            Graph graph = new Graph();
             Node start = new Node(1, 0.0, 0.0);
             Node end = new Node(2, 1.0, 1.0);
-            Way way = new Way(start, end, Map.of("highway", "residential"));
+            Map<String, String> tags = new HashMap<>();
+            tags.put("highway", "residential");
+            Way way = new Way(start, end, Map.of("tags", tags, "nodes", Arrays.asList(1L, 2L)));
+            
+            graph.addNode(start);
+            graph.addNode(end);
             graph.addWay(way);
+
             assertEquals(2, graph.getNodeCount());
             assertEquals(1, graph.getWayCount());
         }
 
         @Test
         void testAddBidirectionalWay() {
+            Graph graph = new Graph();
             Node start = new Node(1, 0.0, 0.0);
             Node end = new Node(2, 1.0, 1.0);
-            Way way = new Way(start, end, Map.of("highway", "residential", "oneway", "no"));
+            Map<String, String> tags = new HashMap<>();
+            tags.put("highway", "residential");
+            Way way = new Way(start, end, Map.of("tags", tags, "nodes", Arrays.asList(1L, 2L)));
+            
+            graph.addNode(start);
+            graph.addNode(end);
             graph.addWay(way);
+
             assertEquals(2, graph.getNodeCount());
-            assertEquals(1, graph.getWayCount());  // Should count as 1 way, not 2
+            assertEquals(1, graph.getWayCount());
+            assertTrue(graph.getNeighbors(start).contains(end));
+            assertTrue(graph.getNeighbors(end).contains(start));
         }
     }
 
     @Nested
+    class NeighborOperations {
+        @Test
+        void testGetNeighbors() {
+            Graph graph = new Graph();
+            Node center = new Node(1, 0.0, 0.0);
+            Node north = new Node(2, 0.0, 1.0);
+            Node east = new Node(3, 1.0, 0.0);
+            
+            Map<String, String> tags = new HashMap<>();
+            tags.put("highway", "residential");
+            
+            graph.addNode(center);
+            graph.addNode(north);
+            graph.addNode(east);
+            graph.addWay(new Way(center, north, Map.of("tags", tags, "nodes", Arrays.asList(1L, 2L))));
+            graph.addWay(new Way(center, east, Map.of("tags", tags, "nodes", Arrays.asList(1L, 3L))));
+
+            Set<Node> neighbors = graph.getNeighbors(center);
+            assertEquals(2, neighbors.size());
+            assertTrue(neighbors.contains(north));
+            assertTrue(neighbors.contains(east));
+        }
+    }
+    @Nested
     class PathfindingOperations {
         @Test
         void testFindShortestPath() {
+            Graph graph = new Graph();
             Node start = new Node(1, 0.0, 0.0);
             Node middle = new Node(2, 1.0, 1.0);
             Node end = new Node(3, 2.0, 2.0);
-            graph.addWay(new Way(start, middle, Map.of()));
-            graph.addWay(new Way(middle, end, Map.of()));
+            
+            Map<String, String> tags = new HashMap<>();
+            tags.put("highway", "residential");
+            
+            graph.addNode(start);
+            graph.addNode(middle);
+            graph.addNode(end);
+            graph.addWay(new Way(start, middle, Map.of("tags", tags, "nodes", Arrays.asList(1L, 2L))));
+            graph.addWay(new Way(middle, end, Map.of("tags", tags, "nodes", Arrays.asList(2L, 3L))));
 
             List<Node> path = graph.findShortestPath(start, end);
+            assertNotNull(path);
             assertEquals(3, path.size());
             assertEquals(start, path.get(0));
             assertEquals(middle, path.get(1));
@@ -90,30 +139,15 @@ class GraphTest {
 
         @Test
         void testFindShortestPathNoRoute() {
+            Graph graph = new Graph();
             Node start = new Node(1, 0.0, 0.0);
             Node end = new Node(2, 1.0, 1.0);
+            
             graph.addNode(start);
             graph.addNode(end);
 
             List<Node> path = graph.findShortestPath(start, end);
-            assertTrue(path.isEmpty());
-        }
-    }
-
-    @Nested
-    class NeighborOperations {
-        @Test
-        void testGetNeighbors() {
-            Node center = new Node(1, 0.0, 0.0);
-            Node north = new Node(2, 0.0, 1.0);
-            Node east = new Node(3, 1.0, 0.0);
-            graph.addWay(new Way(center, north, Map.of()));
-            graph.addWay(new Way(center, east, Map.of()));
-
-            Set<Node> neighbors = graph.getNeighbors(center);
-            assertEquals(2, neighbors.size());
-            assertTrue(neighbors.contains(north));
-            assertTrue(neighbors.contains(east));
+            assertNull(path);
         }
     }
 }
