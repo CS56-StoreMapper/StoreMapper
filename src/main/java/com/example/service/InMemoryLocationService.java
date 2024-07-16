@@ -121,46 +121,54 @@ public class InMemoryLocationService implements LocationService {
     }
 
     private void processAllAtOnce(List<Node> allNodes, int totalNodes) {
+        logger.info("Starting processAllAtOnce with " + totalNodes + " nodes");
         processNodeChunk(allNodes);
-        logger.info("Processed all " + totalNodes + " nodes at once");
+        logger.info("Finished processAllAtOnce. Total locations: " + locations.size());
     }
-
+    
     private void processNodeChunk(List<Node> nodes) {
+        logger.info("Starting processNodeChunk with " + nodes.size() + " nodes");
         for (Node node : nodes) {
             try {
                 Location location = createLocation(node);
                 locations.put(node.id(), location);
+                logger.info("Added location: " + location.getId() + " of type " + location.getClass().getSimpleName());
             } catch (Exception e) {
                 logger.warning("Error processing node " + node.id() + ": " + e.getMessage());
+                e.printStackTrace(); // Add this line to print the full stack trace
             }
         }
-    }
-    
-    private void processNode(Node node, long memoryPerNode) {
-        if (Runtime.getRuntime().freeMemory() < memoryPerNode * 2) {
-            clearCacheIfNeeded();
-        }
-        try {
-            Location location = createLocation(node);
-            locations.put(node.id(), location);
-        } catch (Exception e) {
-            logger.warning("Error processing node " + node.id() + ": " + e.getMessage());
-        }
-    }
-    
-    private Location createLocation(Node node) {
-        String type = node.tags().getOrDefault("type", "unknown");
-        return "store".equals(type) 
-            ? new Store(node.id(), node.lat(), node.lon(), node)
-            : new Restaurant(node.id(), node.lat(), node.lon(), node);
+        logger.info("Finished processNodeChunk. Total locations: " + locations.size());
     }
 
-    private long estimateMemoryPerNode() {
-        if (locations.isEmpty()) return 0;
-        Runtime runtime = Runtime.getRuntime();
-        long usedMemory = runtime.totalMemory() - runtime.freeMemory();
-        return usedMemory / locations.size();
+    private Location createLocation(Node node) {
+        String type = node.tags().getOrDefault("type", "unknown");
+        logger.info("Creating location for node " + node.id() + " with type " + type);
+        Location location = "store".equals(type) 
+            ? new Store(node.id(), node.lat(), node.lon(), node)
+            : new Restaurant(node.id(), node.lat(), node.lon(), node);
+        logger.info("Created location: " + location.getId() + " of type " + location.getClass().getSimpleName());
+        return location;
     }
+    
+    // private void processNode(Node node, long memoryPerNode) {
+    //     if (Runtime.getRuntime().freeMemory() < memoryPerNode * 2) {
+    //         clearCacheIfNeeded();
+    //     }
+    //     try {
+    //         Location location = createLocation(node);
+    //         locations.put(node.id(), location);
+    //     } catch (Exception e) {
+    //         logger.warning("Error processing node " + node.id() + ": " + e.getMessage());
+    //     }
+    // }
+
+    // private long estimateMemoryPerNode() {
+    //     if (locations.isEmpty()) return 0;
+    //     Runtime runtime = Runtime.getRuntime();
+    //     long usedMemory = runtime.totalMemory() - runtime.freeMemory();
+    //     return usedMemory / locations.size();
+    // }
 
     private void clearCacheIfNeeded() {
         if (isLowMemory()) {

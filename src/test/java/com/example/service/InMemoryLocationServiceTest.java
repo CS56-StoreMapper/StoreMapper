@@ -34,7 +34,9 @@ public class InMemoryLocationServiceTest {
         nodes.add(new Node(3L, 40.7300, -74.0100, Map.of("type", "store")));
         
         // Create a simple graph with these nodes
-        return new Graph(nodes, ways);
+        Graph graph = new Graph(nodes, ways);
+        System.out.println("Created test graph with " + nodes.size() + " nodes");
+        return graph;
     }
 
     @Test
@@ -43,6 +45,16 @@ public class InMemoryLocationServiceTest {
         assertNotNull(service.getLocationById(1L), "Location with ID 1 should exist");
         assertNotNull(service.getLocationById(2L), "Location with ID 2 should exist");
         assertNotNull(service.getLocationById(3L), "Location with ID 3 should exist");
+    }
+
+    @Test
+    public void testGraphCreation() {
+        Graph graph = createTestGraph();
+        assertNotNull(graph, "Graph should not be null");
+        assertEquals(3, graph.getNodes().size(), "Graph should have 3 nodes");
+        assertTrue(graph.getNodes().stream().anyMatch(node -> node.id() == 1L), "Graph should contain node with ID 1");
+        assertTrue(graph.getNodes().stream().anyMatch(node -> node.id() == 2L), "Graph should contain node with ID 2");
+        assertTrue(graph.getNodes().stream().anyMatch(node -> node.id() == 3L), "Graph should contain node with ID 3");
     }
 
     @Test
