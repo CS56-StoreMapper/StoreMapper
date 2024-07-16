@@ -86,7 +86,9 @@ jobs:
         run: ls -R target
 
       - name: Run tests
-        run: mvn -B test
+        run: mvn -B test -Dapp.use.chunking=true
+        env:
+          MAVEN_OPTS: -Xmx4g
 
       - name: Upload test results
         if: always()
