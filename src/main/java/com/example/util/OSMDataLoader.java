@@ -52,7 +52,8 @@ public class OSMDataLoader {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     public <T> List<T> loadData(String filename, Function<Map<String, Object>, T> mapper) throws IOException {
-        List<Map<String, Object>> dataList = objectMapper.readValue(new File(filename), 
+        File dataFile = DataFileManager.getDataFile(filename);
+        List<Map<String, Object>> dataList = objectMapper.readValue(dataFile, 
                                              new TypeReference<List<Map<String, Object>>>() {});
         return dataList.stream()
                        .map(mapper)

@@ -1,5 +1,6 @@
 package com.example.service;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,6 +12,7 @@ import java.util.Map;
 
 import com.example.model.Node;
 import com.example.model.Way;
+import com.example.util.DataFileManager;
 import com.example.util.OSMDataLoader;
 
 /**
@@ -36,6 +38,10 @@ public class OSMDataService {
      */
     public OSMDataService() {
         this.dataLoader = new OSMDataLoader();
+        File dataDir = new File(DataFileManager.DATA_DIR);
+        if (!dataDir.exists()) {
+            dataDir.mkdirs();
+        }
     }
 
     /**
@@ -51,18 +57,21 @@ public class OSMDataService {
      * @throws IOException If there's an error reading the files.
      * @throws ClassNotFoundException If there's an error deserializing the data.
      */
-    public List<Node> loadNodes(String nodesFile, String waysFile) throws IOException, ClassNotFoundException {
-        Map<Long, Node> allNodes = dataLoader.loadData(nodesFile, Node::fromMap).stream()
-                .collect(Collectors.toMap(Node::id, node -> node));
-
+    public List<Node> loadNodes(String nodesFileName, String waysFileName) throws IOException, ClassNotFoundException {
+        File nodesFile = DataFileManager.getDataFile(nodesFileName);
+        File waysFile = DataFileManager.getDataFile(waysFileName);
+    
+        Map<Long, Node> allNodes = dataLoader.loadData(nodesFile.getAbsolutePath(), Node::fromMap).stream()
+            .collect(Collectors.toMap(Node::id, node -> node));
+    
         this.loadedNodes = allNodes; // Store all nodes before filtering
-
-        List<Way> ways = loadWays(waysFile);
-
+    
+        List<Way> ways = loadWays(waysFile.getAbsolutePath());
+    
         Set<Long> activeNodeIds = ways.stream()
                 .flatMap(way -> List.of(way.startNode().id(), way.endNode().id()).stream())
                 .collect(Collectors.toSet());
-
+    
         return allNodes.values().stream()
                 .filter(node -> activeNodeIds.contains(node.id()))
                 .toList();
@@ -82,7 +91,8 @@ public class OSMDataService {
         if (this.loadedNodes == null) {
             throw new IllegalStateException("Nodes must be loaded before loading ways");
         }
-        return dataLoader.loadData(filename, map -> mapToWays(map, this.loadedNodes))
+        File dataFile = DataFileManager.getDataFile(filename);
+        return dataLoader.loadData(dataFile.getAbsolutePath(), map -> mapToWays(map, this.loadedNodes))
                 .stream()
                 .flatMap(List::stream)
                 .toList();

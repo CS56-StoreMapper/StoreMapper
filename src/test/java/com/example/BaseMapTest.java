@@ -1,5 +1,6 @@
 package com.example;
 
+import com.example.util.DataFileManager;
 import com.example.util.OSMDataLoader;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -25,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -46,8 +48,8 @@ public abstract class BaseMapTest {
     @BeforeAll
     public void setUp() throws IOException, ClassNotFoundException {
         String datasetName = getDatasetName();
-        String nodesFile = System.getProperty("user.dir") + "/data/" + datasetName + ".nodes.json";
-        String waysFile = System.getProperty("user.dir") + "/data/" + datasetName + ".ways.json";
+        String nodesFile = datasetName + ".nodes.json";
+        String waysFile = datasetName + ".ways.json";
         
         logger.info("Loading nodes from: " + nodesFile);
         List<Node> nodes = loadNodesFromFile(nodesFile);
@@ -78,11 +80,11 @@ public abstract class BaseMapTest {
 
     
 
-    private List<Node> loadNodesFromFile(String filename) throws IOException, ClassNotFoundException {
+    private List<Node> loadNodesFromFile(String filename) throws IOException {
         return osmDataLoader.loadData(filename, Node::fromMap);
     }
-
-    private List<Way> loadWaysFromFile(String filename) throws IOException, ClassNotFoundException {
+    
+    private List<Way> loadWaysFromFile(String filename) throws IOException {
         return osmDataLoader.loadData(filename, Way::fromMap);
     }
 

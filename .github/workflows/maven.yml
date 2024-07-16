@@ -20,8 +20,19 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
+    - name: Ensure data files are present
+      run: |
+        mkdir -p data
+        for file in cambridge.nodes.json cambridge.ways.json midwest.nodes.json midwest.ways.json mit.nodes.json mit.ways.json; do
+          if [ ! -f "data/$file" ] || [ ! -s "data/$file" ]; then
+            echo "Downloading $file from external source"
+            curl -o "data/$file" "https://pub-dacce4b1e1694983965461fa4da90666.r2.dev/$file"
+          else
+            echo "$file is present and not empty"
+          fi
+        done
     - name: Increase Maven heap space
-      run: echo "MAVEN_OPTS=-Xmx8g" >> $GITHUB_ENV
+      run: echo "MAVEN_OPTS=-Xmx4g" >> $GITHUB_ENV
     - name: Build with Maven
       run: mvn clean install
     - name: Run tests
