@@ -79,6 +79,7 @@ public final class MapService {
                 .filter(location -> location.getOsmTag(key)
                         .map(tag -> tag.equals(value))
                         .orElse(false))
+                        .toList();
     }
 
     /**
