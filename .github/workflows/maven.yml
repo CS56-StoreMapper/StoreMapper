@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Echo a test message
-        run: echo "Workflow is running"
+        run: echo "Workflow is running!"
 
       - uses: actions/checkout@v3
 
