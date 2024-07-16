@@ -53,6 +53,8 @@ Our project includes two key design documents:
 
 2. `docs/class_diagram_summary.md`: A detailed explanation of the class diagram, including rationale for design decisions and implementation approach.
 
+3. `docs/adding_node_way.md`: An updated integration plan and roadmap for OSM data structures, reflecting the current state of the project and future development plans.
+
 These documents serve as a reference for our project's architecture and design principles. Please refer to them when making significant changes to the project structure.
 
 ## Development Roadmap
@@ -64,6 +66,8 @@ These documents serve as a reference for our project's architecture and design p
 5. Optimize route finding algorithms
 6. Transition from in-memory storage to PostgreSQL with PostGIS
 7. Implement data import process for OpenStreetMap data
+
+For a more detailed breakdown of our current development status and future plans, including OSM integration and performance optimizations, please refer to `docs/adding_node_way.md`.
 
 ## Contributing
 
