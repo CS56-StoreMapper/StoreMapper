@@ -20,6 +20,8 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
+    - name: Increase Maven heap space
+      run: echo "MAVEN_OPTS=-Xmx4g" >> $GITHUB_ENV
     - name: Build with Maven
       run: mvn clean install
     - name: Run tests
