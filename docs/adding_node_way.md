@@ -48,8 +48,8 @@
 - Create overall architecture documentation explaining OSM integration
 
 ## 11. Performance Optimization 🔄 In Progress
-- Implemented basic spatial indexing for nearest-node queries
 - TODO:
+  - Implement basic spatial indexing for nearest-node queries
   - Implement more robust spatial indexing (e.g., k-d tree or quadtree)
   - Profile and optimize Graph operations
 
@@ -102,15 +102,18 @@
 2. Complete Documentation:
    - Ensure JavaDocs are updated
    - Create the overall architecture documentation
-3. Enhance Performance Optimization:
-   - Implement a more robust spatial index
+3. Implement Performance Optimization:
+   - Implement basic spatial indexing for nearest-node queries
+   - Plan for more robust spatial indexing (e.g., k-d tree or quadtree)
    - Profile and optimize Graph operations
 4. Address Error Handling and Edge Cases:
    - Implement more comprehensive error handling
    - Consider fallback mechanisms for incomplete data
-5. Consider Additional Features:
+5. Enhance findNearestLocation methods:
+   - Update `InMemoryLocationService` and `MapService` to use spatial indexing
+6. Consider Additional Features:
    - Implement tag-based filtering
    - Evaluate the need for OSM relation support
-6. Think about Caching and Performance:
-   - Plan for caching frequently used routes
+7. Plan for Caching and Performance:
+   - Design caching strategy for frequently used routes
    - Optimize graph traversal for larger datasets
