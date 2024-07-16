@@ -2,9 +2,9 @@
 
 ## Class Diagram
 
-![Class Diagram](images/ClassDiagramPostOSM.svg)
+![Class Diagram](images/ClassDiagramPostOSM.png)
 
-For a PNG version, [click here](images/ClassDiagramPostOSM.png).
+For a SVG version, [click here](images/ClassDiagramPostOSM.svg).
 
 The source PlantUML file for this diagram can be found [here](ClassDiagramPostOSM.puml).
 
