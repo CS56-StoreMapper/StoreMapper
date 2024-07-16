@@ -47,6 +47,8 @@ public abstract class BaseMapTest {
 
     @BeforeAll
     public void setUp() throws IOException, ClassNotFoundException {
+        long maxHeapSize = Runtime.getRuntime().maxMemory();
+        logger.info("Maximum heap size at test setup: " + (maxHeapSize / (1024 * 1024)) + " MB");
         String datasetName = getDatasetName();
         String nodesFile = datasetName + ".nodes.json";
         String waysFile = datasetName + ".ways.json";
