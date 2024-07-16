@@ -42,7 +42,47 @@ public class MITShortPathsTest extends BaseMapTest {
         assertPathEquals(expectedPath, actualRoute.getNodes());
     }
 
-    // Add more tests following the same pattern...
+    @Test
+    public void test02_short() {
+        Coordinates start = new Coordinates(42.3576, -71.0952); // Kresge
+        Coordinates end = new Coordinates(42.355, -71.1009); // New House
+        List<Coordinates> expectedPath = List.of(
+            new Coordinates(42.3575, -71.0952),
+            new Coordinates(42.3582, -71.0931),
+            new Coordinates(42.3575, -71.0927),
+            new Coordinates(42.355, -71.1009)
+        );
+        Route actualRoute = mapService.calculateRoute(start, end);
+        assertPathEquals(expectedPath, actualRoute.getNodes());
+    }
+
+    @Test
+    public void test03_short() {
+        // Should take path Kresge, North Maseeh, Lobby 7, Building 26
+        // Tests for non-exact locations
+        // Tests that nodes that aren't in any way are not used
+        Coordinates start = new Coordinates(42.3576, -71.0951); // close to Kresge
+        Coordinates end = new Coordinates(42.3605, -71.091); // is near an invalid node: Unreachable Node
+        List<Coordinates> expectedPath = List.of(
+            new Coordinates(42.3575, -71.0952),
+            new Coordinates(42.3582, -71.0931),
+            new Coordinates(42.3592, -71.0932),
+            new Coordinates(42.36, -71.0907)
+        );
+        Route actualRoute = mapService.calculateRoute(start, end);
+        assertNotNull(actualRoute, "Expected a route to be found, but no route was returned.");
+        assertPathEquals(expectedPath, actualRoute.getNodes());
+    }
+
+    @Test
+    public void test04_short() {
+        // Should return null
+        // Tests node with no outgoing edges
+        Coordinates start = new Coordinates(42.3575, -71.0956); // Parking Lot - end of a oneway and not on any other way
+        Coordinates end = new Coordinates(42.3575, -71.0940); // close to Kresge
+        Route actualRoute = mapService.calculateRoute(start, end);
+        assertNull(actualRoute, "Expected null route for unreachable destination");
+    }
 
     private void assertPathEquals(List<Coordinates> expected, List<Node> actual) {
         assertEquals(expected.size(), actual.size(), "Path lengths differ");

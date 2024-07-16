@@ -12,8 +12,8 @@ public final class Route {
     private final Node start;
     /** The ending node of the route. */
     private final Node end;
-    /** The list of waypoints for the route. */
-    private List<Node> waypoints;
+    /** The list of nodes for the route. */
+    private List<Node> nodes;
     /** The total distance of the route in kilometers. */
     private double totalDistance;
 
@@ -26,7 +26,7 @@ public final class Route {
     public Route(Node startPoint, Node endPoint) {
         this.start = startPoint;
         this.end = endPoint;
-        this.waypoints = List.of(start, end);
+        this.nodes = List.of(start, end);
         this.totalDistance = calculateTotalDistance();
     }
 
@@ -36,13 +36,13 @@ public final class Route {
      * @param waypoints The list of nodes that make up the route.
      * @throws IllegalArgumentException if less than two waypoints are provided.
      */
-    public Route(List<Node> waypoints) {
-        if (waypoints.size() < 2) {
-            throw new IllegalArgumentException("At least two waypoints are required to form a route.");
+    public Route(List<Node> nodes) {
+        if (nodes == null || nodes.isEmpty()) {
+            throw new IllegalArgumentException("At least one waypoint is required to form a route.");
         }
-        this.waypoints = List.copyOf(waypoints);
-        this.start = waypoints.get(0);
-        this.end = waypoints.get(waypoints.size() - 1);
+        this.nodes = List.copyOf(nodes);
+        this.start = nodes.get(0);
+        this.end = nodes.get(nodes.size() - 1);
         this.totalDistance = calculateTotalDistance();
     }
 
@@ -69,17 +69,8 @@ public final class Route {
      *
      * @return A list of nodes representing the waypoints.
      */
-    public List<Node> getWaypoints() {
-        return waypoints;
-    }
-
-    /**
-     * Gets the list of nodes for the route.
-     *
-     * @return A list of nodes representing the waypoints.
-     */
     public List<Node> getNodes() {
-        return new ArrayList<>(waypoints);
+        return nodes;
     }
 
     /**
@@ -98,18 +89,18 @@ public final class Route {
      */
     public double calculateTotalDistance() {
         double distance = 0.0;
-        for (int i = 0; i < waypoints.size() - 1; i++) {
-            distance += waypoints.get(i).toCoordinates().distanceTo(waypoints.get(i + 1).toCoordinates());
+        for (int i = 0; i < nodes.size() - 1; i++) {
+            distance += nodes.get(i).toCoordinates().distanceTo(nodes.get(i + 1).toCoordinates());
         }
         return distance;
     }
 
     public boolean containsNode(Node node) {
-        return waypoints.contains(node);
+        return nodes.contains(node);
     }
     
     public int getNodeCount() {
-        return waypoints.size();
+        return nodes.size();
     }
 
     public double estimateTravelTime(double averageSpeedKmh) {
@@ -132,6 +123,6 @@ public final class Route {
     @Override
     public String toString() {
         return "Route from " + start.toCoordinates() + " to " + end.toCoordinates() + 
-            ", distance: " + String.format("%.2f", totalDistance) + " km, waypoints: " + waypoints.size();
+            ", distance: " + String.format("%.2f", totalDistance) + " km, nodes: " + nodes.size();
     }
 }

@@ -2,12 +2,21 @@ package com.example.model;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.logging.Logger;
 
 
 
 public class Graph {
+    private static final Logger logger = Logger.getLogger(Graph.class.getName());
+
     private final Map<Long, Node> nodes;
-    private final Map<Long, Set<Way>> adjacencyList;
+    private final Map<Long, Set<Long>> adjacencyList;
+
+    private static final Set<String> ALLOWED_HIGHWAY_TYPES = Set.of(
+    "motorway", "trunk", "primary", "secondary", "tertiary", "unclassified",
+    "residential", "living_street", "motorway_link", "trunk_link",
+    "primary_link", "secondary_link", "tertiary_link"
+);
 
     private class NodeWrapper {
         Node node;
@@ -40,29 +49,18 @@ public class Graph {
     public Graph(List<Node> nodes, List<Way> ways) {
         this.nodes = new HashMap<>();
         this.adjacencyList = new HashMap<>();
+        System.out.println("Initializing graph with " + nodes.size() + " nodes and " + ways.size() + " ways");
+    
         for (Node node : nodes) {
             addNode(node);
+            System.out.println("Added node: " + node);
         }
-        updateWaysWithNodes(ways);
+
         for (Way way : ways) {
             addWay(way);
         }
-    }
 
-    private void updateWaysWithNodes(List<Way> ways) {
-        Map<Long, Node> nodesMap = nodes.values().stream()
-            .collect(Collectors.toMap(Node::id, n -> n));
-        
-        for (int i = 0; i < ways.size(); i++) {
-            Way way = ways.get(i);
-            Node startNode = nodesMap.get(way.startNode().id());
-            Node endNode = nodesMap.get(way.endNode().id());
-            if (startNode != null && endNode != null) {
-                ways.set(i, way.withNodes(startNode, endNode));
-            } else {
-                throw new IllegalStateException("Missing nodes for way: " + way);
-            }
-        }
+        System.out.println("Final graph with " + nodes.size() + " nodes and " + ways.size() + " ways");
     }
 
     public void addNode(Node node) {
@@ -71,15 +69,33 @@ public class Graph {
     }
 
     public void addWay(Way way) {
-        addNode(way.startNode());
-        addNode(way.endNode());
-        adjacencyList.get(way.startNode().id()).add(way);
-        System.out.println("Added way: " + way);
-        
-        if (!way.isOneWay()) {
-            Way reverseWay = new Way(way.endNode(), way.startNode(), way.data());
-            adjacencyList.get(way.endNode().id()).add(reverseWay);
-            System.out.println("Added reverse way: " + reverseWay);
+        String highwayType = way.getTags().get("highway");
+        if (!ALLOWED_HIGHWAY_TYPES.contains(highwayType)) {
+            System.out.println("Skipping way with illegal highway type: " + highwayType);
+            return;
+        }
+
+        List<Long> nodeIds = way.getNodeIds();
+        for (int i = 0; i < nodeIds.size() - 1; i++) {
+            Long startId = nodeIds.get(i);
+            Long endId = nodeIds.get(i + 1);
+            addNodeIfAbsent(startId);
+            addNodeIfAbsent(endId);
+            adjacencyList.computeIfAbsent(startId, k -> new HashSet<>()).add(endId);
+            System.out.println("Added connection: " + startId + " -> " + endId);
+            
+            if (!way.isOneWay()) {
+                adjacencyList.computeIfAbsent(endId, k -> new HashSet<>()).add(startId);
+                System.out.println("Added reverse connection: " + endId + " -> " + startId);
+            }
+        }
+    }
+
+    private void addNodeIfAbsent(Long id) {
+        if (!nodes.containsKey(id)) {
+            Node node = new Node(id, 0, 0); // Placeholder coordinates
+            addNode(node);
+            logger.info("Added node with id " + id);
         }
     }
 
@@ -93,19 +109,34 @@ public class Graph {
 
     public Set<Node> getNeighbors(Node node) {
         return adjacencyList.get(node.id()).stream()
-                .map(Way::endNode)
+                .map(this::getNode)
                 .collect(Collectors.toSet());
     }
 
-    public Node findNearestNode(double lat, double lon) {
-        return nodes.values().stream()
-            .min(Comparator.comparingDouble(node -> 
-                Math.pow(node.lat() - lat, 2) + Math.pow(node.lon() - lon, 2)))
-            .orElseThrow(() -> new IllegalStateException("No nodes in the graph"));
-    }
+    // public Node findNearestNode(double lat, double lon) {
+    //     return nodes.values().stream()
+    //         .min(Comparator.comparingDouble(node -> 
+    //             Math.pow(node.lat() - lat, 2) + Math.pow(node.lon() - lon, 2)))
+    //         .orElseThrow(() -> new IllegalStateException("No nodes in the graph"));
+    // }
 
-    public Node findNearestNode(Coordinates coordinates) {
-        return findNearestNode(coordinates.getLatitude(), coordinates.getLongitude());
+    public Node findNearestRelevantNode(Coordinates coordinates) {
+        Node nearest = null;
+        double minDistance = Double.MAX_VALUE;
+        for (Map.Entry<Long, Set<Long>> entry : adjacencyList.entrySet()) {
+            Long nodeId = entry.getKey();
+            Set<Long> neighbors = entry.getValue();
+            if (!neighbors.isEmpty()) {
+                Node node = nodes.get(nodeId);
+                double distance = node.toCoordinates().distanceTo(coordinates);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearest = node;
+                }
+            }
+        }
+        System.out.println("Nearest relevant node to " + coordinates + " is " + nearest);
+        return nearest;
     }
 
     public List<Node> findShortestPath(Node start, Node end) {
@@ -129,20 +160,16 @@ public class Graph {
             System.out.println("Examining node: " + current);
     
             // Step 3.2: If the current node is the end node, return the path
-            // if (current.equals(end) && distances.get(current) <= distances.get(end)) {
-            //     return reconstructPath(previousNodes, end);
-            // }
+            if (current.equals(end)) {
+                return reconstructPath(previousNodes, end);
+            }
     
             // Step 3.3: Get the neighbors of the current node
-            Set<Way> neighbors = adjacencyList.get(current.id());
+            Set<Node> neighbors = getNeighbors(current);
             System.out.println("Neighbors: " + neighbors);
     
             // Step 3.4: For each neighbor, calculate the new distance and update if it's shorter
-            for (Way way : neighbors) {
-                if (way.getTags().getOrDefault("highway", "").equals("illegal path")) {
-                    continue;  // Skip illegal paths
-                }
-                Node neighbor = way.endNode();
+            for (Node neighbor : neighbors) {                
                 double newDist = distances.get(current) + calculateDistance(current, neighbor);
     
                 // Step 3.4.1: If the new distance is shorter, update the distance and previous node
@@ -155,13 +182,7 @@ public class Graph {
                 }
             }
         }
-         // Check if a path to the end node was found
-        if (previousNodes.containsKey(end)) {
-            List<Node> path = reconstructPath(previousNodes, end);
-            printPath(path);
-            return path;
-        }
-        
+    
         // Step 4: If no path is found, return an empty list
         System.out.println("No path found");
         return Collections.emptyList();
@@ -187,11 +208,16 @@ public class Graph {
     }
 
     public int getWayCount() {
-        // Count only the original ways, not the reverse ways
-        return (int) adjacencyList.values().stream()
-                .flatMap(Set::stream)
-                .filter(way -> way.isOneWay() || way.startNode().id() < way.endNode().id())
-                .count();
+        Set<String> countedConnections = new HashSet<>();
+
+        for (Map.Entry<Long, Set<Long>> entry : adjacencyList.entrySet()) {
+            Long fromNodeId = entry.getKey();
+            for (Long toNodeId : entry.getValue()) {
+                String connection = fromNodeId < toNodeId ? fromNodeId + "-" + toNodeId : toNodeId + "-" + fromNodeId;
+                countedConnections.add(connection);
+            }
+        }
+        return countedConnections.size();
     }
 
     private void printPath(List<Node> path) {
@@ -203,20 +229,12 @@ public class Graph {
 
     public void printGraphStructure() {
         System.out.println("Graph Structure:");
-        for (Map.Entry<Long, Set<Way>> entry : adjacencyList.entrySet()) {
+        for (Map.Entry<Long, Set<Long>> entry : adjacencyList.entrySet()) {
             Node node = nodes.get(entry.getKey());
             System.out.println("Node: " + node);
-            System.out.println("  Outgoing ways:");
-            for (Way way : entry.getValue()) {
-                System.out.println("    " + way);
-            }
-            System.out.println("  Incoming ways:");
-            for (Set<Way> ways : adjacencyList.values()) {
-                for (Way way : ways) {
-                    if (way.endNode().equals(node)) {
-                        System.out.println("    " + way);
-                    }
-                }
+            System.out.println("  Neighbors:");
+            for (Long neighborId : entry.getValue()) {
+                System.out.println("    " + nodes.get(neighborId));
             }
         }
     }

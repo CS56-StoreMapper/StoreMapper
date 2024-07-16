@@ -25,8 +25,11 @@ public record Way(Node startNode, Node endNode, Map<String, Object> data) {
      * @return A List of Long values representing the IDs of all nodes in this way
      */
     @SuppressWarnings("unchecked")
-    public List<Long> getNodes() {
-        return (List<Long>) data.getOrDefault("nodes", Collections.emptyList());
+    public List<Long> getNodeIds() {
+        List<?> nodeIds = (List<?>) data.getOrDefault("nodes", Collections.emptyList());
+        return nodeIds.stream()
+                .map(Way::toLong)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -144,7 +147,7 @@ public record Way(Node startNode, Node endNode, Map<String, Object> data) {
      * @return true if the way is one-way, false otherwise
      */
     public boolean isOneWay() {
-        return "yes".equals(getTags().get("oneway")) || "motorway".equals(getTags().get("highway"));
+        return "yes".equals(getTags().get("oneway"));
     }
 
     /**

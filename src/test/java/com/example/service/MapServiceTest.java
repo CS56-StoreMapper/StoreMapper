@@ -184,7 +184,7 @@ class MapServiceTest {
             Route route = mapService.calculateRoute(start, end);
             
             assertNotNull(route);
-            assertEquals(3, route.getWaypoints().size());
+            assertEquals(3, route.getNodes().size());
             assertTrue(route.getTotalDistance() > 0);
         }
 
@@ -196,7 +196,7 @@ class MapServiceTest {
             Route route = mapService.calculateRoute(start, end);
             
             assertNotNull(route);
-            assertEquals(3, route.getWaypoints().size());
+            assertEquals(3, route.getNodes().size());
             assertTrue(route.getTotalDistance() > 0);
         }
     }

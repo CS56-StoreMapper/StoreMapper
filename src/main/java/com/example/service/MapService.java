@@ -98,21 +98,41 @@ public final class MapService {
     }
 
     public Route calculateRoute(final Location start, final Location end) {
-        Node startNode = findNearestGraphNode(start.getCoordinates());
-        Node endNode = findNearestGraphNode(end.getCoordinates());
+        Node startNode = graph.findNearestRelevantNode(start.getCoordinates());
+        Node endNode = graph.findNearestRelevantNode(end.getCoordinates());
         return calculateRouteInternal(startNode, endNode);
     }
 
     public Route calculateRoute(final Coordinates start, final Coordinates end) {
-        Node startNode = findNearestGraphNode(start);
-        Node endNode = findNearestGraphNode(end);
-        return calculateRouteInternal(startNode, endNode);
+        Node startNode = graph.findNearestRelevantNode(start);
+        Node endNode = graph.findNearestRelevantNode(end);
+
+        if (startNode == null || endNode == null) {
+            System.out.println("No route possible: start or end nodes not found");
+            return null;
+        }
+
+
+        if (startNode.equals(endNode)) {
+            System.out.println("Start and end nodes are the same");
+            return null;
+        }
+
+        List<Node> path = graph.findShortestPath(startNode, endNode);
+
+        if (path == null || path.isEmpty()) {
+            System.out.println("No route found between " + startNode + " and " + endNode);
+            return null;
+        }
+
+        System.out.println("Route found: " + path);
+        return new Route(path);
     }
 
     private Route calculateRouteInternal(Node startNode, Node endNode) {
         List<Node> path = graph.findShortestPath(startNode, endNode);
-        if (path.isEmpty()) {
-            throw new RouteNotFoundException("No route found between the given points");
+        if (path == null || path.isEmpty()) {
+            return null;
         }
         return new Route(path);
     }
