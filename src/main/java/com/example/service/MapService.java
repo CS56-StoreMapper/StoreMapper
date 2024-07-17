@@ -21,18 +21,31 @@ public final class MapService {
 
     private final LocationService locationService;
     private final Graph graph;
+    private final RouteStrategy routeStrategy;
 
     private static final double MAX_DISTANCE_KM = 1.0; // Maximum distance to consider a point reachable
 
     /**
-     * Constructs a new MapService.
+     * Constructs a new MapService with a specified RouteStrategy.
      *
      * @param locationService The location service to use for retrieving location data.
+     * @param graph The graph representing the road network.
      * @param routeStrategy The route strategy to use for calculating routes.
      */
-    public MapService(final LocationService locationService, final Graph graph) {
+    public MapService(final LocationService locationService, final Graph graph, final RouteStrategy routeStrategy) {
         this.locationService = Objects.requireNonNull(locationService, "LocationService must not be null");
         this.graph = Objects.requireNonNull(graph, "Graph must not be null");
+        this.routeStrategy = Objects.requireNonNull(routeStrategy, "RouteStrategy must not be null");
+    }
+
+    /**
+     * Constructs a new MapService with a default DijkstraRouteStrategy.
+     *
+     * @param locationService The location service to use for retrieving location data.
+     * @param graph The graph representing the road network.
+     */
+    public MapService(final LocationService locationService, final Graph graph) {
+        this(locationService, graph, new DijkstraRouteStrategy(graph));
     }
 
     /**
@@ -129,16 +142,25 @@ public final class MapService {
             return null;
         }
 
-        List<Node> path = graph.findShortestPath(startNode, endNode);
-
-        if (path == null || path.isEmpty()) {
-            System.out.println("No route found between " + startNode + " and " + endNode);
+        try {
+            Route route = routeStrategy.calculateRoute(startNode, endNode);
+            System.out.println("Route found: " + route.getNodes().size() + " nodes, start: " + route.getNodes().get(0) + ", end: " + route.getNodes().get(route.getNodes().size() - 1));
+            return route;
+        } catch (IllegalStateException e) {
+            System.out.println("No route found between " + start + " and " + end + ": " + e.getMessage());
             return null;
         }
 
-        // Replace the existing println with:
-        System.out.println("Route found: " + path.size() + " nodes, start: " + path.get(0) + ", end: " + path.get(path.size() - 1));
-        return new Route(path);
+        // List<Node> path = graph.findShortestPath(startNode, endNode);
+
+        // if (path == null || path.isEmpty()) {
+        //     System.out.println("No route found between " + startNode + " and " + endNode);
+        //     return null;
+        // }
+
+        // // Replace the existing println with:
+        // System.out.println("Route found: " + path.size() + " nodes, start: " + path.get(0) + ", end: " + path.get(path.size() - 1));
+        // return new Route(path);
     }
 
     private Route calculateRouteInternal(Node startNode, Node endNode) {

@@ -1,35 +1,28 @@
 package com.example.service;
 
-import com.example.model.Coordinates;
+import com.example.model.Graph;
 import com.example.model.Route;
 import com.example.model.Node;
 
 /**
- * Defines a strategy for calculating routes between two coordinates.
+ * Defines a strategy for calculating routes between two points.
  */
-@FunctionalInterface
 public interface RouteStrategy {
 
-    /**
-     * Calculates a route between two coordinates.
+   /**
+     * Calculates a route between two nodes.
      *
-     * @param start The starting coordinates of the route.
-     * @param end The ending coordinates of the route.
+     * @param start The starting node of the route.
+     * @param end The ending node of the route.
      * @return A Route object representing the calculated route.
      */
     Route calculateRoute(Node start, Node end);
 
     /**
-     * Default method to calculate route using Coordinates.
-     * This method can be used for backward compatibility or when only Coordinates are available.
+     * Sets the graph to be used for route calculations.
+     * This method allows for updating the graph if needed.
      *
-     * @param start The starting coordinates of the route.
-     * @param end The ending coordinates of the route.
-     * @return A Route object representing the calculated route.
+     * @param graph The graph representing the road network.
      */
-    default Route calculateRouteFromCoordinates(Coordinates start, Coordinates end) {
-        Node startNode = new Node(-1, start.getLatitude(), start.getLongitude());
-        Node endNode = new Node(-2, end.getLatitude(), end.getLongitude());
-        return calculateRoute(startNode, endNode);
-    }
+    void setGraph(Graph graph);
 }
