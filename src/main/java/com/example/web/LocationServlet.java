@@ -2,7 +2,7 @@ package com.example.web;
 
 import java.io.IOException;
 import java.util.List;
-
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import com.google.gson.Gson;
@@ -20,7 +20,7 @@ import com.example.model.Location;
 import com.example.model.Route;
 import com.example.service.MapService;
 
-@WebServlet(name = "LocationServlet", urlPatterns = {"/", "/locations", "/route"})
+@WebServlet(name = "LocationServlet", urlPatterns = {"/", "/locations", "/route", "/nearest", "/within-radius", "/search"})
 public class LocationServlet extends HttpServlet {
     private static final Logger logger = Logger.getLogger(LocationServlet.class.getName());
 
@@ -38,21 +38,18 @@ public class LocationServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        String pathInfo = request.getPathInfo();
         String servletPath = request.getServletPath();
-        String queryString = request.getQueryString();
         logger.info("GET request received: " + request.getRequestURL());
         logger.info("Servlet path: " + servletPath);
-        logger.info("Path info: " + pathInfo);
 
         try {
-            if ("/locations".equals(servletPath)) {
-                handleGetAllLocations(request, response);
-            } else if ("/route".equals(servletPath)) {
-                logger.info("Handling route request");
-                handleRouteRequest(request, response);
-            } else {
-                request.getRequestDispatcher("/WEB-INF/index.jsp").forward(request, response);
+            switch (servletPath) {
+                case "/locations" -> handleGetAllLocations(request, response);
+                case "/route" -> handleRouteRequest(request, response);
+                case "/nearest" -> handleNearestLocationRequest(request, response);
+                case "/within-radius" -> handleLocationsWithinRadiusRequest(request, response);
+                case "/search" -> handleSearchRequest(request, response);
+                default -> request.getRequestDispatcher("/WEB-INF/index.jsp").forward(request, response);
             }
         } catch (Exception e) {
             logger.severe("Error processing GET request: " + e.getMessage());
@@ -98,6 +95,40 @@ public class LocationServlet extends HttpServlet {
         }
     }
 
+    private void handleNearestLocationRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        double lat = Double.parseDouble(request.getParameter("lat"));
+        double lon = Double.parseDouble(request.getParameter("lon"));
+        Coordinates point = new Coordinates(lat, lon);
+
+        Optional<Location> nearestLocation = mapService.findNearestLocation(point);
+        if (nearestLocation.isPresent()) {
+            sendJsonResponse(response, nearestLocation.get());
+        } else {
+            sendErrorResponse(response, HttpServletResponse.SC_NOT_FOUND, "No locations found");
+        }
+    }
+
+    private void handleLocationsWithinRadiusRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        double lat = Double.parseDouble(request.getParameter("lat"));
+        double lon = Double.parseDouble(request.getParameter("lon"));
+        double radiusKm = Double.parseDouble(request.getParameter("radius"));
+        Coordinates center = new Coordinates(lat, lon);
+
+        List<Location> locations = mapService.findLocationsWithinRadius(center, radiusKm);
+        sendJsonResponse(response, locations);
+    }
+
+    private void handleSearchRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String query = request.getParameter("query");
+        double lat = Double.parseDouble(request.getParameter("lat"));
+        double lon = Double.parseDouble(request.getParameter("lon"));
+        double radiusKm = Double.parseDouble(request.getParameter("radius"));
+        Coordinates center = new Coordinates(lat, lon);
+
+        logger.info("Searching for locations with keyword: " + query + " within radius " + radiusKm + " km from " + center);
+        List<Location> locations = mapService.searchLocationsWithinRadiusAndKeyword(query, center, radiusKm);
+        sendJsonResponse(response, locations);
+    }
 
     private void sendJsonResponse(HttpServletResponse response, Object data) throws IOException {
         response.setContentType("application/json; charset=UTF-8");
