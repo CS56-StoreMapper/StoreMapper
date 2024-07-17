@@ -113,9 +113,7 @@ public final class MapService {
     }
 
     public Route calculateRoute(final Location start, final Location end) {
-        Node startNode = graph.findNearestRelevantNode(start.getCoordinates());
-        Node endNode = graph.findNearestRelevantNode(end.getCoordinates());
-        return calculateRouteInternal(startNode, endNode);
+        return calculateRoute(start.getCoordinates(), end.getCoordinates());
     }
 
     public Route calculateRoute(final Coordinates start, final Coordinates end) {
@@ -142,33 +140,15 @@ public final class MapService {
             return null;
         }
 
-        try {
-            Route route = routeStrategy.calculateRoute(startNode, endNode);
-            System.out.println("Route found: " + route.getNodes().size() + " nodes, start: " + route.getNodes().get(0) + ", end: " + route.getNodes().get(route.getNodes().size() - 1));
-            return route;
-        } catch (IllegalStateException e) {
-            System.out.println("No route found between " + start + " and " + end + ": " + e.getMessage());
+        Route route = routeStrategy.calculateRoute(startNode, endNode);
+        if (route == null) {
+            System.out.println("No route found between " + start + " and " + end);
             return null;
         }
 
-        // List<Node> path = graph.findShortestPath(startNode, endNode);
+        System.out.println("Route found: " + route.getNodes().size() + " nodes, start: " + route.getNodes().get(0) + ", end: " + route.getNodes().get(route.getNodes().size() - 1));
+        return route;
 
-        // if (path == null || path.isEmpty()) {
-        //     System.out.println("No route found between " + startNode + " and " + endNode);
-        //     return null;
-        // }
-
-        // // Replace the existing println with:
-        // System.out.println("Route found: " + path.size() + " nodes, start: " + path.get(0) + ", end: " + path.get(path.size() - 1));
-        // return new Route(path);
-    }
-
-    private Route calculateRouteInternal(Node startNode, Node endNode) {
-        List<Node> path = graph.findShortestPath(startNode, endNode);
-        if (path == null || path.isEmpty()) {
-            return null;
-        }
-        return new Route(path);
     }
 
     private Node findNearestGraphNode(Coordinates coordinates) {

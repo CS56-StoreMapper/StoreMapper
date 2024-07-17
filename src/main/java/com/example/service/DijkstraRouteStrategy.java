@@ -16,7 +16,7 @@ public class DijkstraRouteStrategy implements RouteStrategy {
     public Route calculateRoute(Node start, Node end) {
         List<Node> path = pathFinder.findShortestPath(start, end);
         if (path == null || path.isEmpty()) {
-            throw new IllegalStateException("No route found between " + start + " and " + end);
+            return null;
         }
         return new Route(path);
     }

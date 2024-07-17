@@ -2,6 +2,8 @@ package com.example;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyCollection;
+
 import com.example.model.Coordinates;
 import com.example.model.Node;
 import com.example.model.Route;
@@ -79,7 +81,6 @@ public class MITShortPathsTest extends BaseMapTest {
             new Coordinates(42.36, -71.0907)
         );
         Route actualRoute = mapService.calculateRoute(start, end);
-        assertNotNull(actualRoute, "Expected a route to be found, but no route was returned.");
         assertPathEquals(expectedPath, actualRoute.getNodes());
     }
 
@@ -90,10 +91,15 @@ public class MITShortPathsTest extends BaseMapTest {
         Coordinates start = new Coordinates(42.3575, -71.0956); // Parking Lot - end of a oneway and not on any other way
         Coordinates end = new Coordinates(42.3575, -71.0940); // close to Kresge
         Route actualRoute = mapService.calculateRoute(start, end);
-        assertNull(actualRoute, "Expected null route for unreachable destination");
+        assertPathEquals(null, actualRoute != null ? actualRoute.getNodes() : null);
     }
 
     private void assertPathEquals(List<Coordinates> expected, List<Node> actual) {
+        if (expected == null) {
+            assertNull(actual, "Expected null route but got a non-null route");
+            return;
+        }
+        assertNotNull(actual, "Expected a non-null route but got null");
         assertEquals(expected.size(), actual.size(), "Path lengths differ");
         for (int i = 0; i < expected.size(); i++) {
             assertTrue(coordinatesClose(expected.get(i), actual.get(i).toCoordinates()),

@@ -26,9 +26,6 @@ public class Graph {
             
         nodes.forEach(this::addNode);
         ways.forEach(this::addWay);
-
-        // logger.info("Adding " + ways.size() + " ways to the graph");
-        // logger.info("Graph now has " + getWayCount() + " ways");
     }
 
     public void addNode(Node node) {
@@ -39,7 +36,6 @@ public class Graph {
     public void addWay(Way way) {
         String highwayType = way.getTags().get("highway");
         if (highwayType == null || !ALLOWED_HIGHWAY_TYPES.contains(highwayType)) {
-            // logger.fine(() -> "Skipping way due to invalid highway type: " + highwayType);
             return;
         }
 
@@ -86,12 +82,17 @@ public class Graph {
         for (Map.Entry<Long, Set<Long>> entry : adjacencyList.entrySet()) {
             Long nodeId = entry.getKey();
             Set<Long> neighbors = entry.getValue();
+            // A node is considered relevant if it has neighbors
             if (!neighbors.isEmpty()) {
                 Node node = nodes.get(nodeId);
                 double distance = node.toCoordinates().distanceTo(coordinates);
                 if (distance < minDistance) {
                     minDistance = distance;
                     nearest = node;
+                    // Early termination if we find an exact match
+                    if (distance == 0) {
+                        break;
+                    }
                 }
             }
         }
@@ -107,16 +108,46 @@ public class Graph {
     }
 
     public int getWayCount() {
-        Set<String> countedConnections = new HashSet<>();
+        Set<Connection> countedConnections = new HashSet<>();
 
         for (Map.Entry<Long, Set<Long>> entry : adjacencyList.entrySet()) {
             Long fromNodeId = entry.getKey();
             for (Long toNodeId : entry.getValue()) {
-                String connection = fromNodeId < toNodeId ? fromNodeId + "-" + toNodeId : toNodeId + "-" + fromNodeId;
-                countedConnections.add(connection);
+                countedConnections.add(new Connection(fromNodeId, toNodeId));
             }
         }
         return countedConnections.size();
+    }
+
+    /**
+     * Represents a unique, undirected connection between two nodes in the graph.
+     * 
+     * This record ensures that connections are treated as undirected edges,
+     * regardless of the order in which the node IDs are provided. It maintains
+     * a consistent representation by always storing the smaller node ID first.
+     * 
+     * Key features:
+     * 1. Undirected: Connection(A, B) is equivalent to Connection(B, A).
+     * 2. Unique representation: Ensures each connection is represented uniquely,
+     *    which is crucial for correct counting and set operations.
+     * 3. Immutable: Once created, a Connection cannot be modified.
+     * 
+     * @param node1 The ID of the first node (always the smaller of the two IDs)
+     * @param node2 The ID of the second node (always the larger of the two IDs)
+     */
+    private record Connection(long node1, long node2) {
+        /**
+         * Compact constructor for Connection.
+         * Ensures that node1 is always the smaller ID and node2 is the larger ID.
+         * This guarantees a consistent, direction-independent representation of the connection.
+         */
+        Connection {
+            if (node1 > node2) {
+                long temp = node1;
+                node1 = node2;
+                node2 = temp;
+            }
+        }
     }
 
     public void printGraphStructure() {

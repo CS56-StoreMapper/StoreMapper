@@ -4,6 +4,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Nested;
 
+import com.example.service.DijkstraRouteStrategy;
+import com.example.service.RouteStrategy;
+
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -11,10 +14,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class GraphTest {
 
     private Graph graph;
+    private RouteStrategy routeStrategy;
 
     @BeforeEach
     void setUp() {
         graph = new Graph();
+        routeStrategy = new DijkstraRouteStrategy(graph);
     }
 
     @Nested
@@ -146,8 +151,9 @@ class GraphTest {
             graph.addNode(start);
             graph.addNode(end);
 
-            List<Node> path = graph.findShortestPath(start, end);
-            assertNull(path);
+            // List<Node> path = graph.findShortestPath(start, end);
+            Route route = routeStrategy.calculateRoute(start, end);
+            assertNull(route);
         }
     }
 }
