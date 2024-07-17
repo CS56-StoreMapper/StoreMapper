@@ -80,15 +80,34 @@
                 var lat = location.coordinates.latitude;
                 var lon = location.coordinates.longitude;
                 var marker = L.marker([lat, lon])
-                    .bindPopup(location.name + ' ' + lat + ' ' + lon);
+                    .bindPopup(createPopupContent(location));
                 markers.addLayer(marker);
-                listHtml += '<li>' + location.name + ' (' + lat.toFixed(6) + ' ' + lon.toFixed(6) + ')</li>';
+                listHtml += '<li>' + createListItemContent(location) + '</li>';
             });
             listHtml += '</ul>';
             document.getElementById('locationList').innerHTML = listHtml;
             if (locations.length > 0) {
                 map.fitBounds(markers.getBounds());
             }
+        }
+        
+        function createPopupContent(location) {
+            var content = '<strong>' + location.osmNode.tags.name + '</strong><br>';
+            content += 'Latitude: ' + location.coordinates.latitude.toFixed(6) + '<br>';
+            content += 'Longitude: ' + location.coordinates.longitude.toFixed(6) + '<br>';
+            if (location.osmNode.tags.amenity) content += 'Amenity: ' + location.osmNode.tags.amenity + '<br>';
+            if (location.osmNode.tags.shop) content += 'Shop: ' + location.osmNode.tags.shop + '<br>';
+            if (location.osmNode.tags.brand) content += 'Brand: ' + location.osmNode.tags.brand + '<br>';
+            if (location.osmNode.tags['addr:street']) content += 'Street: ' + location.osmNode.tags['addr:street'] + '<br>';
+            if (location.osmNode.tags['addr:housenumber']) content += 'House Number: ' + location.osmNode.tags['addr:housenumber'] + '<br>';
+            return content;
+        }
+        
+        function createListItemContent(location) {
+            var content = location.osmNode.tags.name + ' (' + location.coordinates.latitude.toFixed(6) + ', ' + location.coordinates.longitude.toFixed(6) + ')';
+            if (location.osmNode.tags.amenity) content += ' - ' + location.osmNode.tags.amenity;
+            if (location.osmNode.tags.shop) content += ' - ' + location.osmNode.tags.shop;
+            return content;
         }
         loadAllLocations();
     </script>

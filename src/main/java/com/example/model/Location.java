@@ -13,35 +13,27 @@ import java.util.Optional;
 public abstract sealed class Location implements Comparable<Location> permits Store, Restaurant {
     /** The unique identifier for the location. */
     private final long id;
-    /** The name of the location. */
-    private final String name;
     /** The coordinates of the location. */
     private final Coordinates coordinates;
     private final Node osmNode; // Optional OSM node data
 
-    public Location(long id, String name, Coordinates coordinates) {
-        this(id, name, coordinates, null);
+
+    public Location(long id, double latitude, double longitude, Node osmNode) {
+        this(id, new Coordinates(latitude, longitude), osmNode);
     }
 
-    public Location(long id, String name, double latitude, double longitude) {
-        this(id, name, new Coordinates(latitude, longitude), null);
+    public Location(long id, Node osmNode) {
+        this(id, new Coordinates(osmNode.lat(), osmNode.lon()), osmNode);
     }
 
-    public Location(long id, String name, Node osmNode) {
-        this(id, name, new Coordinates(osmNode.lat(), osmNode.lon()), osmNode);
-    }
-
-    public Location(long id, String name, Coordinates coordinates, Node osmNode) {
+    public Location(long id, Coordinates coordinates, Node osmNode) {
         this.id = id;
-        this.name = name;
         this.coordinates = coordinates;
         this.osmNode = osmNode;
     }
 
      // Getters (no setters to maintain immutability)
-    public long getId() { return id; }
-    public String getName() { return name; }
-    
+    public long getId() { return id; }    
 
     public double getLatitude() {
         return osmNode != null ? osmNode.lat() : coordinates.getLatitude();
@@ -66,6 +58,33 @@ public abstract sealed class Location implements Comparable<Location> permits St
     public Map<String, String> getOsmTags() {
         return osmNode != null ? osmNode.tags() : Map.of();
     }
+
+    public String getName() {
+        return getOsmTag("name").orElse("");
+    }
+
+    public String getAmenity() {
+        return getOsmTag("amenity").orElse("");
+    }
+
+    public String getShop() {
+        return getOsmTag("shop").orElse("");
+    }
+
+    public String getBrand() {
+        return getOsmTag("brand").orElse("");
+    }
+
+    public String getCuisine() {
+        return getOsmTag("cuisine").orElse("");
+    }
+
+    public String getAddress() {
+        return getOsmTag("addr:full").orElse(
+               getOsmTag("addr:housenumber").orElse("") + " " +
+               getOsmTag("addr:street").orElse("")).trim();
+    }
+
 
     public abstract LocationType getType();
 
@@ -119,7 +138,7 @@ public abstract sealed class Location implements Comparable<Location> permits St
     @Override
     public String toString() {
         return String.format("Location{id=%d, name='%s', coordinates=%s, type=%s, osmId=%s}",
-                id, name, coordinates, getType(), 
+                id, getName(), coordinates, getType(), 
                 osmNode != null ? osmNode.id() : "N/A");
     }
 }

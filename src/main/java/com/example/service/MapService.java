@@ -7,10 +7,13 @@ import java.util.Objects;
 import com.example.model.Coordinates;
 import com.example.model.Location;
 import com.example.model.Route;
+import com.example.web.LocationServlet;
 import com.example.model.Node;
 import com.example.model.Graph;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.logging.Logger;
+
 
 /**
  * Service class for map-related operations.
@@ -25,9 +28,11 @@ public final class MapService {
 
     private static final double MAX_DISTANCE_KM = 5.0; // Maximum distance to consider a point reachable
 
+    private static final Logger logger = Logger.getLogger(LocationServlet.class.getName());
+
     /**
      * Constructs a new MapService with a specified RouteStrategy.
-     *
+     *G
      * @param locationService The location service to use for retrieving location data.
      * @param graph The graph representing the road network.
      * @param routeStrategy The route strategy to use for calculating routes.
@@ -199,9 +204,28 @@ public final class MapService {
         if (radiusKm < 0) {
             throw new IllegalArgumentException("Radius must be non-negative");
         }
-        return this.findLocationsWithinRadius(center, radiusKm).stream()
-                .filter(location -> location.getName().toLowerCase().contains(query.toLowerCase()))
+        List<Location> locationsWithinRadius = this.findLocationsWithinRadius(center, radiusKm);
+        logger.info("Found " + locationsWithinRadius.size() + " locations within radius");
+        String lowercaseQuery = query.toLowerCase();
+        List<Location> matchingLocations = locationsWithinRadius.stream()
+                .filter(location -> {
+                    boolean nameMatches = location.getName().toLowerCase().contains(lowercaseQuery);
+                boolean amenityMatches = location.getAmenity().toLowerCase().contains(lowercaseQuery);
+                boolean shopMatches = location.getShop().toLowerCase().contains(lowercaseQuery);
+                boolean brandMatches = location.getBrand().toLowerCase().contains(lowercaseQuery);
+                boolean cuisineMatches = location.getCuisine().toLowerCase().contains(lowercaseQuery);
+                boolean addressMatches = location.getAddress().toLowerCase().contains(lowercaseQuery);
+                
+                boolean matches = nameMatches || amenityMatches || shopMatches || 
+                                  brandMatches || cuisineMatches || addressMatches;
+                
+                logger.info("Location " + location.getName() + " matches query '" + query + "': " + matches);
+                return matches;
+                })
                 .toList();
+
+        logger.info("Found " + matchingLocations.size() + " locations matching query: " + query);
+        return matchingLocations;
     }
 
     public static class RouteNotFoundException extends RuntimeException {
