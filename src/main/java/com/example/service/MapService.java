@@ -206,13 +206,21 @@ public final class MapService {
         }
         List<Location> locationsWithinRadius = this.findLocationsWithinRadius(center, radiusKm);
         logger.info("Found " + locationsWithinRadius.size() + " locations within radius");
+        String lowercaseQuery = query.toLowerCase();
         List<Location> matchingLocations = locationsWithinRadius.stream()
                 .filter(location -> {
-                    boolean nameContains = location.getName().toLowerCase().contains(query.toLowerCase());
-                    logger.info("Location " + location.getName() + " contains keyword " + query + ": " + nameContains);
-                    boolean osmTagContains = location.getOsmTag("name").map(tag -> tag.toLowerCase().contains(query.toLowerCase())).orElse(false);
-                    logger.info("Location " + location.getName() + " contains keyword " + query + ": " + osmTagContains);
-                    return nameContains || osmTagContains;
+                    boolean nameMatches = location.getName().toLowerCase().contains(lowercaseQuery);
+                boolean amenityMatches = location.getAmenity().toLowerCase().contains(lowercaseQuery);
+                boolean shopMatches = location.getShop().toLowerCase().contains(lowercaseQuery);
+                boolean brandMatches = location.getBrand().toLowerCase().contains(lowercaseQuery);
+                boolean cuisineMatches = location.getCuisine().toLowerCase().contains(lowercaseQuery);
+                boolean addressMatches = location.getAddress().toLowerCase().contains(lowercaseQuery);
+                
+                boolean matches = nameMatches || amenityMatches || shopMatches || 
+                                  brandMatches || cuisineMatches || addressMatches;
+                
+                logger.info("Location " + location.getName() + " matches query '" + query + "': " + matches);
+                return matches;
                 })
                 .toList();
 

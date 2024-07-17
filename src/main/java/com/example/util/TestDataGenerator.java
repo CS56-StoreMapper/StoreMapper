@@ -13,6 +13,12 @@ import java.util.stream.Collectors;
 public final class TestDataGenerator {
     private static final Random random = new Random();
 
+    private static final String[] AMENITIES = {"restaurant", "cafe", "bar", "fast_food", "pub", "pharmacy", "bank", "atm", "school", "library", "hospital", "police", "post_office"};
+    private static final String[] SHOPS = {"supermarket", "convenience", "bakery", "butcher", "clothes", "shoes", "electronics", "hardware", "books", "jewelry", "gift", "hairdresser", "car"};
+    private static final String[] CUISINES = {"pizza", "burger", "sushi", "chinese", "italian", "mexican", "indian", "thai", "vegetarian", "seafood"};
+    private static final String[] BRANDS = {"McDonald's", "Starbucks", "Subway", "KFC", "Burger King", "Walmart", "Target", "CVS", "Walgreens", "Best Buy"};
+
+
     private TestDataGenerator() {} // Prevent instantiation
 
     private record NameComponents(String prefix, String type) {}
@@ -45,15 +51,45 @@ public final class TestDataGenerator {
      * @return A Node object with random attributes.
      */
     private static Node generateRandomNode(long id) {
-        NameComponents nameComponents = generateRandomNameComponents();
-        String name = nameComponents.prefix() + " " + nameComponents.type();
         Coordinates coordinates = generateRandomCoordinates();
-
         Map<String, String> tags = new HashMap<>();
-        tags.put("name", name);
-        tags.put("type", random.nextBoolean() ? "store" : "restaurant");
+
+        if (random.nextBoolean()) {
+            // Generate an amenity
+            String amenity = AMENITIES[random.nextInt(AMENITIES.length)];
+            tags.put("amenity", amenity);
+            if (amenity.equals("restaurant") || amenity.equals("cafe") || amenity.equals("fast_food")) {
+                tags.put("cuisine", CUISINES[random.nextInt(CUISINES.length)]);
+            }
+        } else {
+            // Generate a shop
+            tags.put("shop", SHOPS[random.nextInt(SHOPS.length)]);
+        }
+
+        // Add a name
+        tags.put("name", generateRandomName(tags));
+
+        // Randomly add a brand
+        if (random.nextDouble() < 0.3) {
+            tags.put("brand", BRANDS[random.nextInt(BRANDS.length)]);
+        }
+
+        // Add an address
+        tags.put("addr:street", "Test Street " + random.nextInt(100));
+        tags.put("addr:housenumber", String.valueOf(random.nextInt(1000)));
 
         return new Node(id, coordinates.getLatitude(), coordinates.getLongitude(), tags);
+    }
+
+    private static String generateRandomName(Map<String, String> tags) {
+        String prefix = tags.containsKey("brand") ? tags.get("brand") : 
+                        (tags.containsKey("amenity") ? capitalize(tags.get("amenity")) : 
+                        (tags.containsKey("shop") ? capitalize(tags.get("shop")) : ""));
+        return prefix + " " + (random.nextInt(1000) + 1);
+    }
+
+    private static String capitalize(String str) {
+        return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 
     /**
@@ -120,14 +156,14 @@ public final class TestDataGenerator {
      * 
      * @return A NameComponents object containing a random prefix and type.
      */
-    private static NameComponents generateRandomNameComponents() {
-        String[] prefixes = {"North", "South", "East", "West", "Central", "Downtown", "Uptown"};
-        String[] types = {"Grocery", "Cafe", "Bookstore", "Restaurant", "Supermarket", "Bakery", "Pharmacy"};
-        return new NameComponents(
-            prefixes[random.nextInt(prefixes.length)],
-            types[random.nextInt(types.length)]
-        );
-    }
+    // private static NameComponents generateRandomNameComponents() {
+    //     String[] prefixes = {"North", "South", "East", "West", "Central", "Downtown", "Uptown"};
+    //     String[] types = {"Grocery", "Cafe", "Bookstore", "Restaurant", "Supermarket", "Bakery", "Pharmacy"};
+    //     return new NameComponents(
+    //         prefixes[random.nextInt(prefixes.length)],
+    //         types[random.nextInt(types.length)]
+    //     );
+    // }
 
     /**
      * Generates random coordinates within a predefined area.

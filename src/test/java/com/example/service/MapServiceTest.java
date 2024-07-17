@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,29 +38,45 @@ class MapServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        
+        // Create a list of nodes with various tags
         List<Node> nodes = new ArrayList<>();
-        Node node1 = new Node(1, 34.0522, -118.2437);
-        Node node2 = new Node(2, 34.0523, -118.2438);
-        Node node3 = new Node(3, 34.0524, -118.2439);
-        nodes.add(node1);
-        nodes.add(node2);
-        nodes.add(node3);
+        nodes.add(new Node(1, 34.0522, -118.2437, Map.of("name", "Downtown Cafe", "amenity", "cafe", "cuisine", "coffee")));
+        nodes.add(new Node(2, 34.0523, -118.2438, Map.of("name", "Central Library", "amenity", "library")));
+        nodes.add(new Node(3, 34.0524, -118.2439, Map.of("name", "City Supermarket", "shop", "supermarket")));
+        nodes.add(new Node(4, 34.0525, -118.2440, Map.of("name", "Pizza Place", "amenity", "restaurant", "cuisine", "pizza")));
+        nodes.add(new Node(5, 34.0526, -118.2441, Map.of("name", "Main Street Pharmacy", "amenity", "pharmacy")));
 
+        // Create ways connecting these nodes
         List<Way> ways = new ArrayList<>();
-        Map<String, Object> wayData1 = new HashMap<>();
-        wayData1.put("tags", Map.of("highway", "residential"));
-        wayData1.put("nodes", Arrays.asList(1L, 2L));
-        ways.add(new Way(node1, node2, wayData1));
+        ways.add(createWay(1, nodes.get(0), nodes.get(1)));
+        ways.add(createWay(2, nodes.get(1), nodes.get(2)));
+        ways.add(createWay(3, nodes.get(2), nodes.get(3)));
+        ways.add(createWay(4, nodes.get(3), nodes.get(4)));
 
-        Map<String, Object> wayData2 = new HashMap<>();
-        wayData2.put("tags", Map.of("highway", "residential"));
-        wayData2.put("nodes", Arrays.asList(2L, 3L));
-        ways.add(new Way(node2, node3, wayData2));
-
+        // Create the graph
         graph = new Graph(nodes, ways);
+
+        // Create locations based on the nodes
+        List<Location> locations = nodes.stream()
+            .map(node -> new Store(node.id(), node.lat(), node.lon(), node))
+            .collect(Collectors.toList());
+
+        // Set up the locationService mock to return our test locations
+        when(locationService.getAllLocations()).thenReturn(locations);
+
+        // Initialize the MapService
         mapService = new MapService(locationService, graph);
 
         System.out.println("Graph initialized with " + graph.getNodeCount() + " nodes and " + graph.getWayCount() + " ways");
+    }
+
+    private Way createWay(long id, Node start, Node end) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("id", id);
+        data.put("nodes", Arrays.asList(start.id(), end.id()));
+        data.put("tags", Map.of("highway", "residential"));
+        return new Way(start, end, data);
     }
 
     @Nested
@@ -76,8 +93,12 @@ class MapServiceTest {
         @Test
         void testFindNearestLocationEquidistant() {
             Coordinates point = new Coordinates(34.0522, -118.2437);
-            Location loc1 = new Store(1, "Store 1", Coordinates.getDestinationPoint(point, 1, 0));
-            Location loc2 = new Store(2, "Store 2", Coordinates.getDestinationPoint(point, 1, 180));
+            Coordinates dest1 = Coordinates.getDestinationPoint(point, 1, 0);
+            Coordinates dest2 = Coordinates.getDestinationPoint(point, 1, 180);
+            Node node1 = new Node(1, dest1.getLatitude(), dest1.getLongitude(), Map.of("name", "Store 1"));
+            Node node2 = new Node(2, dest2.getLatitude(), dest2.getLongitude(), Map.of("name", "Store 2"));
+            Location loc1 = new Store(1, dest1.getLatitude(), dest1.getLongitude(), node1);
+            Location loc2 = new Store(2, dest2.getLatitude(), dest2.getLongitude(), node2);
             
             when(locationService.getAllLocations()).thenReturn(Arrays.asList(loc1, loc2));
     
@@ -91,13 +112,15 @@ class MapServiceTest {
         @Test
         void testFindNearestLocationOneIsNearest() {
             Coordinates point = new Coordinates(34.0522, -118.2437);
-            Location loc1 = new Store(1, "Store 1", new Coordinates(34.0500, -118.2500));
-            Location loc2 = new Store(2, "Store 2", new Coordinates(34.0600, -118.2600));
+            Node node1 = new Node(1, 34.0500, -118.2500, Map.of("name", "Store 1"));
+            Node node2 = new Node(2, 34.0600, -118.2600, Map.of("name", "Store 2"));
+            Location loc1 = new Store(1, 34.0500, -118.2500, node1);
+            Location loc2 = new Store(2, 34.0600, -118.2600, node2);
             
             when(locationService.getAllLocations()).thenReturn(Arrays.asList(loc1, loc2));
-    
+
             Optional<Location> nearest = mapService.findNearestLocation(point);
-    
+
             assertTrue(nearest.isPresent(), "Expected a location to be returned");
             assertEquals(1, nearest.get().getId());
             assertEquals("Store 1", nearest.get().getName());
@@ -111,8 +134,12 @@ class MapServiceTest {
             Coordinates center = new Coordinates(34.0522, -118.2437);
             double radiusKm = 10.0;
             
-            Location loc1 = new Store(1, "Store 1", Coordinates.getDestinationPoint(center, radiusKm-1, 0));
-            Location loc2 = new Store(2, "Store 2", Coordinates.getDestinationPoint(center, radiusKm+1, 90));
+            Coordinates dest1 = Coordinates.getDestinationPoint(center, radiusKm-1, 0);
+            Coordinates dest2 = Coordinates.getDestinationPoint(center, radiusKm+1, 90);
+            Node node1 = new Node(1, dest1.getLatitude(), dest1.getLongitude(), Map.of("name", "Store 1"));
+            Node node2 = new Node(2, dest2.getLatitude(), dest2.getLongitude(), Map.of("name", "Store 2"));
+            Location loc1 = new Store(1, dest1.getLatitude(), dest1.getLongitude(), node1);
+            Location loc2 = new Store(2, dest2.getLatitude(), dest2.getLongitude(), node2);
             
             when(locationService.getAllLocations()).thenReturn(Arrays.asList(loc1, loc2));
         
@@ -130,8 +157,12 @@ class MapServiceTest {
             Coordinates center = new Coordinates(34.0522, -118.2437);
             double radiusKm = 1.0;
             
-            Location loc1 = new Store(1, "Store 1", Coordinates.getDestinationPoint(center, radiusKm+0.1, 0));
-            Location loc2 = new Store(2, "Store 2", Coordinates.getDestinationPoint(center, radiusKm+0.1, 90));
+            Coordinates dest1 = Coordinates.getDestinationPoint(center, radiusKm+0.1, 0);
+            Coordinates dest2 = Coordinates.getDestinationPoint(center, radiusKm+0.1, 90);
+            Node node1 = new Node(1, dest1.getLatitude(), dest1.getLongitude(), Map.of("name", "Store 1"));
+            Node node2 = new Node(2, dest2.getLatitude(), dest2.getLongitude(), Map.of("name", "Store 2"));
+            Location loc1 = new Store(1, dest1.getLatitude(), dest1.getLongitude(), node1);
+            Location loc2 = new Store(2, dest2.getLatitude(), dest2.getLongitude(), node2);
             
             when(locationService.getAllLocations()).thenReturn(Arrays.asList(loc1, loc2));
 
@@ -145,9 +176,15 @@ class MapServiceTest {
             Coordinates center = new Coordinates(34.0522, -118.2437);
             double radiusKm = 10.0;
             
-            Location loc1 = new Store(1, "Store 1", Coordinates.getDestinationPoint(center, radiusKm-0.1, 0));
-            Location loc2 = new Store(2, "Store 2", Coordinates.getDestinationPoint(center, radiusKm, 90));
-            Location loc3 = new Store(3, "Store 3", Coordinates.getDestinationPoint(center, radiusKm+0.1, 180));
+            Coordinates dest1 = Coordinates.getDestinationPoint(center, radiusKm-0.1, 0);
+            Coordinates dest2 = Coordinates.getDestinationPoint(center, radiusKm, 90);
+            Coordinates dest3 = Coordinates.getDestinationPoint(center, radiusKm+0.1, 180);
+            Node node1 = new Node(1, dest1.getLatitude(), dest1.getLongitude(), Map.of("name", "Store 1"));
+            Node node2 = new Node(2, dest2.getLatitude(), dest2.getLongitude(), Map.of("name", "Store 2"));
+            Node node3 = new Node(3, dest3.getLatitude(), dest3.getLongitude(), Map.of("name", "Store 3"));
+            Location loc1 = new Store(1, dest1.getLatitude(), dest1.getLongitude(), node1);
+            Location loc2 = new Store(2, dest2.getLatitude(), dest2.getLongitude(), node2);
+            Location loc3 = new Store(3, dest3.getLatitude(), dest3.getLongitude(), node3);
             
             when(locationService.getAllLocations()).thenReturn(Arrays.asList(loc1, loc2, loc3));
 
@@ -168,8 +205,11 @@ class MapServiceTest {
             Coordinates center = new Coordinates(34.0522, -118.2437);
             double radiusKm = 0.0;
             
-            Location loc1 = new Store(1, "Store 1", center); // Exactly at the center
-            Location loc2 = new Store(2, "Store 2", Coordinates.getDestinationPoint(center, 0.1, 0));
+            Node node1 = new Node(1, center.getLatitude(), center.getLongitude(), Map.of("name", "Store 1")); // Exactly at center
+            Coordinates dest2 = Coordinates.getDestinationPoint(center, 0.1, 180);
+            Node node2 = new Node(2, dest2.getLatitude(), dest2.getLongitude(), Map.of("name", "Store 2"));
+            Location loc1 = new Store(1, center.getLatitude(), center.getLongitude(), node1);
+            Location loc2 = new Store(2, dest2.getLatitude(), dest2.getLongitude(), node2);
             
             when(locationService.getAllLocations()).thenReturn(Arrays.asList(loc1, loc2));
 
@@ -179,7 +219,6 @@ class MapServiceTest {
             assertEquals(1, locationsWithinRadius.get(0).getId(), "Expected only the location at the center to be returned");
         }
     }
-
     @Nested
     class CalculateRouteTests {
         @Test
@@ -217,12 +256,12 @@ class MapServiceTest {
 
     @Test
     void testGetNodeCount() {
-        assertEquals(3, mapService.getNodeCount());
+        assertEquals(5, mapService.getNodeCount(), "Expected 5 nodes in the graph");
     }
 
     @Test
     void testGetWayCount() {
-        assertEquals(2, mapService.getWayCount(), "Expected 2 ways in the graph");
+        assertEquals(4, mapService.getWayCount(), "Expected 4 ways in the graph");
     }
 
 }
