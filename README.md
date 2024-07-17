@@ -47,11 +47,15 @@ mvn clean install
 
 ## Design Documentation
 
-Our project includes two key design documents:
+Our project includes several key design documents:
 
-1. `docs/ClassDiagramPreOSM.puml`: A UML class diagram representing the project structure. To view this file, use a PlantUML viewer or online tools like [PlantUML Web Server](http://www.plantuml.com/plantuml/uml/).
+1. [`docs/architecture.md`](docs/architecture.md): A comprehensive overview of the StoreMapper architecture, including the class diagram, key components, data flow, design decisions, and future considerations. This document reflects the current state of the project, including the integration of OpenStreetMap data structures.
 
-2. `docs/class_diagram_summary.md`: A detailed explanation of the class diagram, including rationale for design decisions and implementation approach.
+2. [`docs/ClassDiagramPostOSM.puml`](docs/ClassDiagramPostOSM.puml): A UML class diagram representing the current project structure. To view this file, use a PlantUML viewer or online tools like [PlantUML Web Server](http://www.plantuml.com/plantuml/uml/).
+
+3. [`docs/class_diagram_summary.md`](docs/class_diagram_summary.md): A detailed explanation of the pre-OSM class diagram, including rationale for design decisions and implementation approach. While some aspects may be outdated, it provides historical context for the project's evolution.
+
+4. [`docs/adding_node_way.md`](docs/adding_node_way.md): An integration plan and roadmap for OSM data structures, reflecting the current state of the project and future development plans.
 
 These documents serve as a reference for our project's architecture and design principles. Please refer to them when making significant changes to the project structure.
 
@@ -64,6 +68,8 @@ These documents serve as a reference for our project's architecture and design p
 5. Optimize route finding algorithms
 6. Transition from in-memory storage to PostgreSQL with PostGIS
 7. Implement data import process for OpenStreetMap data
+
+For a more detailed breakdown of our current development status and future plans, including OSM integration and performance optimizations, please refer to `docs/adding_node_way.md`.
 
 ## Contributing
 

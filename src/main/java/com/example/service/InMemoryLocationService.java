@@ -4,27 +4,74 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.function.Predicate;
 
+import com.example.model.Coordinates;
+import com.example.model.Graph;
 import com.example.model.Location;
+import com.example.model.Restaurant;
+import com.example.model.Store;
 import com.example.util.TestDataGenerator;
+import com.example.model.Node;
+import java.util.logging.Logger;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class InMemoryLocationService implements LocationService {
+    private static final Logger logger = Logger.getLogger(InMemoryLocationService.class.getName());
+    private static final double MEMORY_USAGE_THRESHOLD = 0.75;
+    private static final boolean USE_CHUNKING = Boolean.getBoolean("app.use.chunking");
+    private static final long MEMORY_THRESHOLD = Runtime.getRuntime().maxMemory() / 4; // 25% of max heap
+
     private final Map<Long, Location> locations;
+    private final Graph graph;
 
-    public InMemoryLocationService() {
-        this.locations = new HashMap<>();
+    public InMemoryLocationService(int nodeCount) {
+        this(TestDataGenerator.generateTestGraph(nodeCount));
     }
 
-    // Constructor with number of locations to generate
-    public InMemoryLocationService(int numberOfLocations) {
-        this.locations = TestDataGenerator.generateTestLocations(numberOfLocations);
+    public InMemoryLocationService(Graph graph) {
+        this.locations = new ConcurrentHashMap<>();
+        this.graph = graph;
+        initializeLocationsFromGraph();
     }
 
-    public InMemoryLocationService(Map<Long, Location> initialLocations) {
-        this.locations = new HashMap<>(initialLocations);
+    private void initializeLocationsFromGraph() {
+        List<Node> allNodes = graph.getNodes();
+        int totalNodes = allNodes.size();
+        
+        if (USE_CHUNKING) {
+            new ChunkProcessor().processInChunks(allNodes, totalNodes);
+        } else {
+            processNodeChunk(allNodes);
+        }
+
+        logger.info("Initialized locations from graph with " + locations.size() + " nodes");
     }
 
+    
+    private void processNodeChunk(List<Node> nodes) {
+        for (Node node : nodes) {
+            try {
+                Location location = createLocation(node);
+                locations.put(node.id(), location);
+            } catch (Exception e) {
+                logger.warning("Error processing node " + node.id() + ": " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private Location createLocation(Node node) {
+        String type = node.tags().getOrDefault("type", "unknown");
+        return "store".equals(type) 
+            ? new Store(node.id(), node.lat(), node.lon(), node)
+            : new Restaurant(node.id(), node.lat(), node.lon(), node);
+    }
+
+
+    // LocationService interface methods
     @Override
     public List<Location> getAllLocations() {
         return new ArrayList<>(locations.values());
@@ -36,6 +83,33 @@ public class InMemoryLocationService implements LocationService {
         return locations.values().stream()
                 .filter(location -> location.getName().toLowerCase().contains(lowercaseQuery))
                 .toList();
+    }
+
+    @Override
+    public List<Location> searchLocationsByOsmTag(String key, String value) {
+        return locations.values().stream()
+                .filter(location -> location.getOsmTag(key)
+                        .map(tag -> tag.equals(value))
+                        .orElse(false))
+                .toList();
+    }
+
+    @Override
+    public Optional<Location> findNearestLocation(Coordinates coordinates, Predicate<Location> filter) {
+        return locations.values().stream()
+            .filter(filter)
+            .min((loc1, loc2) -> Double.compare(
+                coordinates.distanceTo(loc1.getCoordinates()),
+                coordinates.distanceTo(loc2.getCoordinates())
+            ));
+    }
+
+    @Override
+    public List<Location> findLocationsWithinRadius(Coordinates coordinates, double radiusKm, Predicate<Location> filter) {
+        return locations.values().stream()
+                .filter(location -> coordinates.distanceTo(location.getCoordinates()) <= radiusKm)
+                .filter(filter)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -56,5 +130,84 @@ public class InMemoryLocationService implements LocationService {
     @Override
     public void deleteLocation(long id) {
         locations.remove(id);
+    }
+    @Override
+    public Graph getGraph() {
+        return this.graph;
+    }
+
+    private class ChunkProcessor {
+        private static final int MIN_CHUNK_SIZE = 10000;
+        private static final int MAX_CHUNK_SIZE = 100000;
+        private static final int GC_PAUSE_TIME = 1000; // milliseconds
+    
+        void processInChunks(List<Node> allNodes, int totalNodes) {
+            int processedNodes = 0;
+            while (processedNodes < totalNodes && shouldContinueProcessing()) {
+                processedNodes = processChunk(allNodes, totalNodes, processedNodes);
+                performMemoryManagement();
+            }
+        }
+        
+        private int processChunk(List<Node> allNodes, int totalNodes, int processedNodes) {
+            int chunkSize = calculateChunkSize();
+            int end = Math.min(processedNodes + chunkSize, totalNodes);
+            List<Node> chunk = allNodes.subList(processedNodes, end);
+            processNodeChunk(chunk);
+            logMemoryUsage();
+            return end;
+        }
+        
+        private void performMemoryManagement() {
+            if (isLowMemory()) {
+                compactLocationMap();
+                System.gc();
+                try {
+                    Thread.sleep(GC_PAUSE_TIME);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+    
+        private int calculateChunkSize() {
+            long freeMemory = Runtime.getRuntime().freeMemory();
+            return Math.toIntExact(Math.max(MIN_CHUNK_SIZE, Math.min(freeMemory / 100, MAX_CHUNK_SIZE)));
+        }
+    
+        private boolean shouldContinueProcessing() {
+            Runtime runtime = Runtime.getRuntime();
+            long usedMemory = runtime.totalMemory() - runtime.freeMemory();
+            return usedMemory < runtime.maxMemory() * MEMORY_USAGE_THRESHOLD;
+        }
+    }
+
+    private void compactLocationMap() {
+        Map<Long, Location> compactMap = new HashMap<>(locations);
+        locations.clear();
+        locations.putAll(compactMap);
+    }
+
+    private void logMemoryUsage() {
+        Runtime runtime = Runtime.getRuntime();
+        long totalMemory = runtime.totalMemory();
+        long freeMemory = runtime.freeMemory();
+        long maxMemory = runtime.maxMemory();
+        logger.info("Memory Usage: " +
+                    "Total: " + (totalMemory / 1048576) + " MB, " +
+                    "Free: " + (freeMemory / 1048576) + " MB, " +
+                    "Max: " + (maxMemory / 1048576) + " MB, " +
+                    "Used: " + ((totalMemory - freeMemory) / 1048576) + " MB");
+    }
+
+    private boolean isLowMemory() {
+        Runtime runtime = Runtime.getRuntime();
+        long maxMemory = runtime.maxMemory();
+        long totalMemory = runtime.totalMemory();
+        long freeMemory = runtime.freeMemory();
+        long usedMemory = totalMemory - freeMemory;
+        long availableMemory = maxMemory - usedMemory;
+        
+        return availableMemory < MEMORY_THRESHOLD;
     }
 }

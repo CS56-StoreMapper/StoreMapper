@@ -15,19 +15,24 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import com.example.service.LocationService;
 import com.example.service.InMemoryLocationService;
+import com.example.model.Coordinates;
 import com.example.model.Location;
+import com.example.model.Route;
+import com.example.service.MapService;
 
-@WebServlet(name = "LocationServlet", urlPatterns = {"/", "/locations"})
+@WebServlet(name = "LocationServlet", urlPatterns = {"/", "/locations", "/route"})
 public class LocationServlet extends HttpServlet {
-    private static final Logger LOG = Logger.getLogger(LocationServlet.class.getName());
+    private static final Logger logger = Logger.getLogger(LocationServlet.class.getName());
 
     private LocationService locationService;
+    private MapService mapService;
 
     @Override
     public void init() throws ServletException {
-        LOG.info("LocationServlet initialized");
+        logger.info("LocationServlet initialized");
         locationService = new InMemoryLocationService(40);
-        LOG.info("LocationServlet initialized with " + locationService.getAllLocations().size() + " locations");
+        mapService = new MapService(locationService, locationService.getGraph());
+        logger.info("LocationServlet initialized with " + locationService.getAllLocations().size() + " locations");
     }
 
     @Override
@@ -36,35 +41,68 @@ public class LocationServlet extends HttpServlet {
         String pathInfo = request.getPathInfo();
         String servletPath = request.getServletPath();
         String queryString = request.getQueryString();
-        LOG.info("GET request received: " + request.getRequestURL());
-        LOG.info("Servlet path: " + servletPath);
-        LOG.info("Path info: " + pathInfo);
+        logger.info("GET request received: " + request.getRequestURL());
+        logger.info("Servlet path: " + servletPath);
+        logger.info("Path info: " + pathInfo);
 
         try {
             if ("/locations".equals(servletPath)) {
                 handleGetAllLocations(request, response);
+            } else if ("/route".equals(servletPath)) {
+                logger.info("Handling route request");
+                handleRouteRequest(request, response);
             } else {
                 request.getRequestDispatcher("/WEB-INF/index.jsp").forward(request, response);
             }
         } catch (Exception e) {
-            LOG.severe("Error processing GET request: " + e.getMessage());
+            logger.severe("Error processing GET request: " + e.getMessage());
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error processing request");
         }
     }
 
     private void handleGetAllLocations(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        LOG.info("Handling get all locations request");
+        logger.info("Handling get all locations request");
         List<Location> locations = locationService.getAllLocations();
-        LOG.info("Found " + locations.size() + " locations");
+        logger.info("Found " + locations.size() + " locations");
 
         sendJsonResponse(response, locations);
+    }
+
+    private void handleRouteRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String startLatParam = request.getParameter("startLat");
+        String startLonParam = request.getParameter("startLon");
+        String endLatParam = request.getParameter("endLat");
+        String endLonParam = request.getParameter("endLon");
+
+        if (startLatParam == null || startLonParam == null || endLatParam == null || endLonParam == null) {
+            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "Missing required parameters");
+            return;
+        }
+
+        try {
+            double startLat = Double.parseDouble(startLatParam);
+            double startLon = Double.parseDouble(startLonParam);
+            double endLat = Double.parseDouble(endLatParam);
+            double endLon = Double.parseDouble(endLonParam);
+
+            Coordinates start = new Coordinates(startLat, startLon);
+            Coordinates end = new Coordinates(endLat, endLon);
+
+            Route route = mapService.calculateRoute(start, end);
+            sendJsonResponse(response, route);
+        } catch (NumberFormatException e) {
+            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "Invalid coordinate format");
+        } catch (Exception e) {
+            logger.severe("Error calculating route: " + e.getMessage());
+            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error calculating route");
+        }
     }
 
 
     private void sendJsonResponse(HttpServletResponse response, Object data) throws IOException {
         response.setContentType("application/json; charset=UTF-8");
         String jsonResponse = new Gson().toJson(data);
-        LOG.info("Sending JSON response: " + jsonResponse);
+        logger.info("Sending JSON response: " + jsonResponse);
         response.getWriter().write(jsonResponse);
     } 
 

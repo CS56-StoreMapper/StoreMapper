@@ -2,7 +2,10 @@ package com.example.model;
 
 import com.example.util.DistanceUtil;
 
+
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Represents a location with an ID, name, and coordinates.
@@ -11,31 +14,58 @@ public abstract sealed class Location implements Comparable<Location> permits St
     /** The unique identifier for the location. */
     private final long id;
     /** The name of the location. */
-    private String name;
+    private final String name;
     /** The coordinates of the location. */
-    private Coordinates coordinates;
+    private final Coordinates coordinates;
+    private final Node osmNode; // Optional OSM node data
 
-    /**
-     * Constructs a new Location object.
-     *
-     * @param id          The unique identifier for the location.
-     * @param name        The name of the location.
-     * @param coordinates The coordinates of the location.
-     */
     public Location(long id, String name, Coordinates coordinates) {
-        this.id = id;
-        this.name = name;
-        this.coordinates = coordinates;
+        this(id, name, coordinates, null);
     }
 
     public Location(long id, String name, double latitude, double longitude) {
-        this(id, name, new Coordinates(latitude, longitude));
+        this(id, name, new Coordinates(latitude, longitude), null);
+    }
+
+    public Location(long id, String name, Node osmNode) {
+        this(id, name, new Coordinates(osmNode.lat(), osmNode.lon()), osmNode);
+    }
+
+    public Location(long id, String name, Coordinates coordinates, Node osmNode) {
+        this.id = id;
+        this.name = name;
+        this.coordinates = coordinates;
+        this.osmNode = osmNode;
     }
 
      // Getters (no setters to maintain immutability)
     public long getId() { return id; }
     public String getName() { return name; }
-    public Coordinates getCoordinates() { return coordinates; }
+    
+
+    public double getLatitude() {
+        return osmNode != null ? osmNode.lat() : coordinates.getLatitude();
+    }
+
+    public double getLongitude() {
+        return osmNode != null ? osmNode.lon() : coordinates.getLongitude();
+    }
+
+    public Coordinates getCoordinates() {
+        return osmNode != null ? new Coordinates(osmNode.lat(), osmNode.lon()) : coordinates;
+    }
+    
+    public Optional<Node> getOsmNode() {
+        return Optional.ofNullable(osmNode);
+    }
+
+    public Optional<String> getOsmTag(String key) {
+        return Optional.ofNullable(osmNode).flatMap(node -> Optional.ofNullable(node.tags().get(key)));
+    }
+
+    public Map<String, String> getOsmTags() {
+        return osmNode != null ? osmNode.tags() : Map.of();
+    }
 
     public abstract LocationType getType();
 
@@ -47,13 +77,18 @@ public abstract sealed class Location implements Comparable<Location> permits St
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Location otherLocation)) return false;
-        return id == otherLocation.id;
+        if (!(o instanceof Location that)) return false;
+        return id == that.id && 
+            Objects.equals(osmNode, that.osmNode);
     }
 
     @Override
     public int hashCode() {
-        return Long.hashCode(id);
+        return Objects.hash(id, osmNode);
+    }
+
+    public boolean isOsmBased() {
+        return osmNode != null;
     }
 
     /**
@@ -83,7 +118,8 @@ public abstract sealed class Location implements Comparable<Location> permits St
      */
     @Override
     public String toString() {
-        return String.format("Location{id=%d, name='%s', coordinates=%s, type=%s}",
-                id, name, coordinates, getType());
+        return String.format("Location{id=%d, name='%s', coordinates=%s, type=%s, osmId=%s}",
+                id, name, coordinates, getType(), 
+                osmNode != null ? osmNode.id() : "N/A");
     }
 }
