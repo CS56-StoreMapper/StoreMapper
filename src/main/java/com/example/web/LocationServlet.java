@@ -48,7 +48,7 @@ public class LocationServlet extends HttpServlet {
         try {
             if ("/locations".equals(servletPath)) {
                 handleGetAllLocations(request, response);
-            } else if (pathInfo != null && pathInfo.startsWith("/route")) {
+            } else if ("/route".equals(servletPath)) {
                 logger.info("Handling route request");
                 handleRouteRequest(request, response);
             } else {

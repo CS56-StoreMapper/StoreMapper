@@ -23,7 +23,7 @@ public final class MapService {
     private final Graph graph;
     private final RouteStrategy routeStrategy;
 
-    private static final double MAX_DISTANCE_KM = 1.0; // Maximum distance to consider a point reachable
+    private static final double MAX_DISTANCE_KM = 5.0; // Maximum distance to consider a point reachable
 
     /**
      * Constructs a new MapService with a specified RouteStrategy.
