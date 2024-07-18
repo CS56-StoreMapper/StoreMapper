@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.nio.file.Paths;
 
 import com.google.gson.Gson;
@@ -166,6 +167,9 @@ public class LocationServlet extends HttpServlet {
         String endLatParam = request.getParameter("endLat");
         String endLonParam = request.getParameter("endLon");
 
+        logger.info("Route request received - Start: " + startLatParam + ", " + startLonParam + 
+                " End: " + endLatParam + ", " + endLonParam);
+
         if (startLatParam == null || startLonParam == null || endLatParam == null || endLonParam == null) {
             sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "Missing required parameters");
             return;
@@ -177,11 +181,21 @@ public class LocationServlet extends HttpServlet {
             double endLat = Double.parseDouble(endLatParam);
             double endLon = Double.parseDouble(endLonParam);
 
+            logger.info("Start lat: " + startLat + ", start lon: " + startLon + ", end lat: " + endLat + ", end lon: " + endLon);
             Coordinates start = new Coordinates(startLat, startLon);
             Coordinates end = new Coordinates(endLat, endLon);
 
             Route route = mapService.calculateRoute(start, end);
-            sendJsonResponse(response, route);
+
+            Map<String, Object> routeData = new HashMap<>();
+            routeData.put("coordinates", route.getNodes().stream()
+                                            .map(node -> Map.of("latitude", node.lat(), "longitude", node.lon()))
+                                            .toList());
+            routeData.put("distance", String.format("%.2f", route.getTotalDistance())); // Convert to km and format
+            routeData.put("estimatedTime", Math.round(route.getTotalDistance() / 50)); // Convert to minutes and round
+
+
+            sendJsonResponse(response, routeData);
         } catch (NumberFormatException e) {
             sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "Invalid coordinate format");
         } catch (Exception e) {
