@@ -8,13 +8,76 @@
     <title>StoreMapper</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
-        #map { height: 400px; width: 100%; }
-        #results { margin-top: 20px; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        #search-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        #search-container > * {
+            height: 36px;
+            padding: 0 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        #category-select, #type-select {
+            min-width: 120px;
+        }
+        #search-input {
+            flex-grow: 1;
+            min-width: 200px;
+        }
+        #radius-input {
+            width: 80px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #map {
+            height: 500px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        #results {
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        #results div {
+            padding: 5px 0;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #results div:hover {
+            background-color: #f0f0f0;
+        }
     </style>
 </head>
 <body>
     <h1>StoreMapper</h1>
-    <div>
+    <div id="search-container">
         <select id="category-select">
             <option value="">All Categories</option>
             <c:forEach var="category" items="${categories}">
@@ -31,8 +94,13 @@
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
-        var map = L.map('map').setView([34.0522, -118.2437], 10);
+        var map = L.map('map', { scrollWheelZoom: false }).setView([34.0522, -118.2437], 10);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        // Enable scroll wheel zoom when the map is clicked or touched
+        map.on('focus', function() { map.scrollWheelZoom.enable(); });
+        // Disable scroll wheel zoom when the map loses focus
+        map.on('blur', function() { map.scrollWheelZoom.disable(); });
 
         var cuisineTypes = ${cuisineTypesJson};
         var shopTypes = ${shopTypesJson};
@@ -102,7 +170,7 @@
                         if (location && location.coordinates) {
                             L.marker([location.coordinates.latitude, location.coordinates.longitude])
                                 .addTo(map)
-                                .bindPopup(location.name);
+                                .bindPopup(createPopupContent(location));
                             bounds.extend([location.coordinates.latitude, location.coordinates.longitude]);
                         }
                     });
@@ -116,12 +184,45 @@
 
                     // Update results list
                     var resultsDiv = document.getElementById('results');
-                    resultsDiv.innerHTML = locations.map(location => `<p>${location.name}</p>`).join('');
+                    resultsDiv.innerHTML = '';
+                    locations.forEach(location => {
+                        var listItem = document.createElement('div');
+                        listItem.textContent = createListItemContent(location);
+                        listItem.addEventListener('click', () => {
+                            map.setView([location.coordinates.latitude, location.coordinates.longitude], 16);
+                            L.popup()
+                                .setLatLng([location.coordinates.latitude, location.coordinates.longitude])
+                                .setContent(createPopupContent(location))
+                                .openOn(map);
+                        });
+                        resultsDiv.appendChild(listItem);
+                    });
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     alert('An error occurred while searching. Please try again.');
                 });
+        }
+
+        function createPopupContent(location) {
+            var content = '<strong>' + (location.osmNode.tags.name || 'Unnamed Location') + '</strong><br>';
+            content += 'Latitude: ' + location.coordinates.latitude.toFixed(6) + '<br>';
+            content += 'Longitude: ' + location.coordinates.longitude.toFixed(6) + '<br>';
+            if (location.cuisineType) content += 'Cuisine: ' + location.cuisineType + '<br>';
+            if (location.shopType) content += 'Shop Type: ' + location.shopType + '<br>';
+            if (location.osmNode.tags.amenity) content += 'Amenity: ' + location.osmNode.tags.amenity + '<br>';
+            if (location.osmNode.tags.shop) content += 'Shop: ' + location.osmNode.tags.shop + '<br>';
+            if (location.osmNode.tags.brand) content += 'Brand: ' + location.osmNode.tags.brand + '<br>';
+            if (location.osmNode.tags['addr:street']) content += 'Street: ' + location.osmNode.tags['addr:street'] + '<br>';
+            if (location.osmNode.tags['addr:housenumber']) content += 'House Number: ' + location.osmNode.tags['addr:housenumber'] + '<br>';
+            return content;
+        }
+        
+        function createListItemContent(location) {
+            var content = location.osmNode.tags.name || 'Unnamed Location';
+            if (location.cuisineType) content += ' - Cuisine: ' + location.cuisineType;
+            if (location.shopType) content += ' - Shop Type: ' + location.shopType;
+            return content;
         }
     </script>
 </body>

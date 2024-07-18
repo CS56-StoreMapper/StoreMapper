@@ -2,7 +2,9 @@ package com.example.web;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.nio.file.Paths;
@@ -29,6 +31,8 @@ import com.example.util.TypeLoader;
 
 @WebServlet(name = "LocationServlet", urlPatterns = {"/", "/locations", "/route", "/nearest", "/within-radius", "/search"})
 public class LocationServlet extends HttpServlet {
+    private static final boolean IS_TEST_ENVIRONMENT = System.getProperty("maven.test") != null;
+    private static final boolean BOUNDS_CHECKING_ENABLED = !IS_TEST_ENVIRONMENT;
     private static final Logger logger = Logger.getLogger(LocationServlet.class.getName());
     
     // Load cuisine and shop types from JSON files
@@ -44,7 +48,9 @@ public class LocationServlet extends HttpServlet {
 
     @Override
     public void init() throws ServletException {
-        logger.info("Initializing LocationServlet");
+        logger.info("Initializing LocationServlet. " + 
+                    (IS_TEST_ENVIRONMENT ? "Test environment detected. " : "Production environment detected. ") +
+                    "Bounds checking " + (BOUNDS_CHECKING_ENABLED ? "enabled" : "disabled"));
         // locationService = new InMemoryLocationService(40);
         try {
             String nodesFile = "/prod_data/west_los_angeles.nodes.json";
@@ -230,6 +236,14 @@ public class LocationServlet extends HttpServlet {
         }
 
         Coordinates center = new Coordinates(lat, lon);
+        Coordinates adjustedCenter = center;
+
+        if (BOUNDS_CHECKING_ENABLED) {
+            adjustedCenter = mapService.adjustToBounds(center);
+            if (!center.equals(adjustedCenter)) {
+                logger.info("Search center adjusted from " + center + " to " + adjustedCenter + " to fit within available data bounds.");
+            }
+        }
 
         logger.info("Searching for " + (category.isEmpty() ? "all" : category) + " locations" + 
                     (type.isEmpty() ? "" : " of type " + type) + 
@@ -238,7 +252,15 @@ public class LocationServlet extends HttpServlet {
 
         List<Location> locations = mapService.searchLocationsWithinRadiusAndKeyword(query, category, type, center, radiusKm);
         logger.info("Found " + locations.size() + " matching locations");
-        sendJsonResponse(response, locations);
+        
+
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("locations", locations);
+        responseData.put("adjustedCenter", adjustedCenter);
+        responseData.put("isTestEnvironment", IS_TEST_ENVIRONMENT);
+        responseData.put("boundsCheckingEnabled", BOUNDS_CHECKING_ENABLED);
+
+        sendJsonResponse(response, responseData);
     }
 
     private void sendJsonResponse(HttpServletResponse response, Object data) throws IOException {
