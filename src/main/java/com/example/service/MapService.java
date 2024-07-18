@@ -195,36 +195,61 @@ public final class MapService {
      * Searches for locations within a specified radius of a point that match a given keyword.
      *
      * @param query The search keyword.
+     * @param category The category to search within (empty string for all categories).
+     * @param type The type to search within (empty string for all types).
      * @param center The center point of the search area.
      * @param radiusKm The radius to search within, in kilometers.
      * @return A list of locations that match the criteria.
      * @throws IllegalArgumentException if radiusKm is negative.
      */
-    public List<Location> searchLocationsWithinRadiusAndKeyword(String query, Coordinates center, double radiusKm) throws IllegalArgumentException{
+    public List<Location> searchLocationsWithinRadiusAndKeyword(String query, String category, String type, Coordinates center, double radiusKm) throws IllegalArgumentException {
         if (radiusKm < 0) {
             throw new IllegalArgumentException("Radius must be non-negative");
         }
         List<Location> locationsWithinRadius = this.findLocationsWithinRadius(center, radiusKm);
         logger.info("Found " + locationsWithinRadius.size() + " locations within radius");
+        
         String lowercaseQuery = query.toLowerCase();
+        String lowercaseType = type.toLowerCase();
+        
         List<Location> matchingLocations = locationsWithinRadius.stream()
                 .filter(location -> {
-                    boolean nameMatches = location.getName().toLowerCase().contains(lowercaseQuery);
-                boolean amenityMatches = location.getAmenity().toLowerCase().contains(lowercaseQuery);
-                boolean shopMatches = location.getShop().toLowerCase().contains(lowercaseQuery);
-                boolean brandMatches = location.getBrand().toLowerCase().contains(lowercaseQuery);
-                boolean cuisineMatches = location.getCuisine().toLowerCase().contains(lowercaseQuery);
-                boolean addressMatches = location.getAddress().toLowerCase().contains(lowercaseQuery);
-                
-                boolean matches = nameMatches || amenityMatches || shopMatches || 
-                                  brandMatches || cuisineMatches || addressMatches;
-                
-                logger.info("Location " + location.getName() + " matches query '" + query + "': " + matches);
-                return matches;
+                    // Category filter
+                    if (!category.isEmpty()) {
+                        if ("restaurant".equals(category) && !location.isRestaurant()) {
+                            return false;
+                        }
+                        if ("store".equals(category) && !location.isStore()) {
+                            return false;
+                        }
+                    }
+                    
+                    // Type filter
+                    if (!type.isEmpty()) {
+                        if ("restaurant".equals(category) && !location.getCuisine().toLowerCase().contains(lowercaseType)) {
+                            return false;
+                        }
+                        if ("store".equals(category) && !location.getShop().toLowerCase().contains(lowercaseType)) {
+                            return false;
+                        }
+                    }
+                    
+                    // Keyword filter (only if query is not empty)
+                    if (!query.isEmpty()) {
+                        boolean nameMatches = location.getName().toLowerCase().contains(lowercaseQuery);
+                        boolean amenityMatches = location.getAmenity().toLowerCase().contains(lowercaseQuery);
+                        boolean brandMatches = location.getBrand().toLowerCase().contains(lowercaseQuery);
+                        boolean addressMatches = location.getAddress().toLowerCase().contains(lowercaseQuery);
+                        
+                        return nameMatches || amenityMatches || brandMatches || addressMatches;
+                    }
+                    
+                    // If we've made it this far and the query is empty, include this location
+                    return true;
                 })
                 .toList();
 
-        logger.info("Found " + matchingLocations.size() + " locations matching query: " + query);
+        logger.info("Found " + matchingLocations.size() + " locations matching criteria");
         return matchingLocations;
     }
 

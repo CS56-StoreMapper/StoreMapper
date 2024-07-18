@@ -1,1 +1,2 @@
 *.ser filter=lfs diff=lfs merge=lfs -text
+src/main/resources/prod_data/*.json filter=lfs diff=lfs merge=lfs -text

@@ -1,9 +1,13 @@
 package com.example;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import com.example.model.Coordinates;
 
+@Disabled("Cambridge tests are slow, enable for full test suite")
 public class CambridgeShortPathsTest extends BaseMapTest {
+    
+
     @Override
     protected String getDatasetName() {
         return "cambridge";

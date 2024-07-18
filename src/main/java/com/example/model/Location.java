@@ -59,6 +59,14 @@ public abstract sealed class Location implements Comparable<Location> permits St
         return osmNode != null ? osmNode.tags() : Map.of();
     }
 
+    public boolean isRestaurant() {
+        return "restaurant".equalsIgnoreCase(this.getAmenity()) || !this.getCuisine().isEmpty();
+    }
+    
+    public boolean isStore() {
+        return "shop".equalsIgnoreCase(this.getAmenity()) || !this.getShop().isEmpty();
+    }
+
     public String getName() {
         return getOsmTag("name").orElse("");
     }

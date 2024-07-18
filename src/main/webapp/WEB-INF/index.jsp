@@ -1,3 +1,5 @@
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,110 +8,121 @@
     <title>StoreMapper</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
-        #map { height: 500px; margin-bottom: 20px; }
-        #controls { display: flex; gap: 10px; margin-bottom: 20px; }
-        #searchInput { flex-grow: 1; }
-        #locationList { height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; }
+        #map { height: 400px; width: 100%; }
+        #results { margin-top: 20px; }
     </style>
 </head>
 <body>
     <h1>StoreMapper</h1>
-    <div id="controls">
-        <input type="text" id="searchInput" placeholder="Search locations...">
-        <button onclick="searchLocations()">Search</button>
-        <button onclick="findNearest()">Find Nearest</button>
-        <input type="number" id="radiusInput" placeholder="Radius (miles)">
-        <button onclick="findWithinRadius()">Find Within Radius</button>
+    <div>
+        <select id="category-select">
+            <option value="">All Categories</option>
+            <c:forEach var="category" items="${categories}">
+                <option value="${category}">${category}</option>
+            </c:forEach>
+        </select>
+        <select id="type-select"></select>
+        <input type="text" id="search-input" placeholder="Search...">
+        <input type="number" id="radius-input" placeholder="Radius (km)" value="10">
+        <button onclick="performSearch()">Search</button>
     </div>
     <div id="map"></div>
-    <div id="locationList"></div>
+    <div id="results"></div>
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
-        var map = L.map('map').setView([34.0168, -118.4707], 12);
+        var map = L.map('map').setView([34.0522, -118.2437], 10);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        let markers = L.featureGroup().addTo(map);
 
-        function loadAllLocations() {
-            fetch('/locations')
-                .then(response => response.json())
-                .then(locations => {
-                    displayLocations(locations);
-                });
-        }
+        var cuisineTypes = ${cuisineTypesJson};
+        var shopTypes = ${shopTypesJson};
 
-        function searchLocations() {
-            const query = document.getElementById('searchInput').value;
-            fetch('/locations/search?query=' + encodeURIComponent(query))
-                .then(response => response.json())
-                .then(locations => {
-                    displayLocations(locations);
-                });
-        }
-
-        function findNearest() {
-            map.locate({setView: true, maxZoom: 16})
-                .on('locationfound', function(e) {
-                    fetch('/locations/nearest?lat=' + e.latlng.lat + '&lon=' + e.latlng.lng)
-                        .then(response => response.json())
-                        .then(location => {
-                            displayLocations([location]);
-                            L.marker(e.latlng).addTo(map).bindPopup("You are here").openPopup();
-                        });
-                });
-        }
-
-        function findWithinRadius() {
-            const radius = document.getElementById('radiusInput').value;
-            map.locate({setView: false})
-                .on('locationfound', function(e) {
-                    fetch('/locations/within?lat=' + e.latlng.lat + '&lon=' + e.latlng.lng + '&radius=' + radius)
-                        .then(response => response.json())
-                        .then(locations => {
-                            displayLocations(locations);
-                            L.marker(e.latlng).addTo(map).bindPopup("You are here").openPopup();
-                            L.circle(e.latlng, {radius: radius * 1609.34}).addTo(map); // Convert miles to meters
-                        });
-                });
-        }
-
-        function displayLocations(locations) {
-            markers.clearLayers();
-            var listHtml = '<ul>';
-            locations.forEach(function(location) {
-                var lat = location.coordinates.latitude;
-                var lon = location.coordinates.longitude;
-                var marker = L.marker([lat, lon])
-                    .bindPopup(createPopupContent(location));
-                markers.addLayer(marker);
-                listHtml += '<li>' + createListItemContent(location) + '</li>';
-            });
-            listHtml += '</ul>';
-            document.getElementById('locationList').innerHTML = listHtml;
-            if (locations.length > 0) {
-                map.fitBounds(markers.getBounds());
+        function updateTypeOptions() {
+            var category = document.getElementById('category-select').value;
+            var typeSelect = document.getElementById('type-select');
+            typeSelect.innerHTML = '<option value="">All Types</option>';
+            if (category === 'restaurant') {
+                cuisineTypes.forEach(addTypeOption);
+            } else if (category === 'store') {
+                shopTypes.forEach(addTypeOption);
+            } else {
+                typeSelect.disabled = true;
+                return;
             }
+            typeSelect.disabled = false;
         }
-        
-        function createPopupContent(location) {
-            var content = '<strong>' + location.osmNode.tags.name + '</strong><br>';
-            content += 'Latitude: ' + location.coordinates.latitude.toFixed(6) + '<br>';
-            content += 'Longitude: ' + location.coordinates.longitude.toFixed(6) + '<br>';
-            if (location.osmNode.tags.amenity) content += 'Amenity: ' + location.osmNode.tags.amenity + '<br>';
-            if (location.osmNode.tags.shop) content += 'Shop: ' + location.osmNode.tags.shop + '<br>';
-            if (location.osmNode.tags.brand) content += 'Brand: ' + location.osmNode.tags.brand + '<br>';
-            if (location.osmNode.tags['addr:street']) content += 'Street: ' + location.osmNode.tags['addr:street'] + '<br>';
-            if (location.osmNode.tags['addr:housenumber']) content += 'House Number: ' + location.osmNode.tags['addr:housenumber'] + '<br>';
-            return content;
+
+        function addTypeOption(type) {
+            var option = document.createElement('option');
+            option.value = type;
+            option.textContent = type;
+            document.getElementById('type-select').appendChild(option);
         }
-        
-        function createListItemContent(location) {
-            var content = location.osmNode.tags.name + ' (' + location.coordinates.latitude.toFixed(6) + ', ' + location.coordinates.longitude.toFixed(6) + ')';
-            if (location.osmNode.tags.amenity) content += ' - ' + location.osmNode.tags.amenity;
-            if (location.osmNode.tags.shop) content += ' - ' + location.osmNode.tags.shop;
-            return content;
+
+        document.getElementById('category-select').addEventListener('change', updateTypeOptions);
+        updateTypeOptions();
+
+        function performSearch() {
+            var category = document.getElementById('category-select').value;
+            var type = document.getElementById('type-select').value;
+            var searchTerm = document.getElementById('search-input').value;
+            var radius = document.getElementById('radius-input').value;
+            var center = map.getCenter();
+
+            var url = '/search?category=' + encodeURIComponent(category) +
+                      '&type=' + encodeURIComponent(type) +
+                      '&name=' + encodeURIComponent(searchTerm) +
+                      '&radius=' + encodeURIComponent(radius) +
+                      '&lat=' + center.lat +
+                      '&lon=' + center.lng;
+
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Received data:', data);
+                    
+                    // Clear existing markers
+                    map.eachLayer(layer => {
+                        if (layer instanceof L.Marker) {
+                            map.removeLayer(layer);
+                        }
+                    });
+
+                    // Ensure data is an array
+                    let locations = Array.isArray(data) ? data : (data.locations || []);
+
+                    // Add new markers and fit bounds
+                    var bounds = L.latLngBounds();
+                    locations.forEach(location => {
+                        if (location && location.coordinates) {
+                            L.marker([location.coordinates.latitude, location.coordinates.longitude])
+                                .addTo(map)
+                                .bindPopup(location.name);
+                            bounds.extend([location.coordinates.latitude, location.coordinates.longitude]);
+                        }
+                    });
+
+                    if (locations.length > 0) {
+                        map.fitBounds(bounds);
+                    } else {
+                        console.log('No locations found');
+                        alert('No locations found for the given search criteria.');
+                    }
+
+                    // Update results list
+                    var resultsDiv = document.getElementById('results');
+                    resultsDiv.innerHTML = locations.map(location => `<p>${location.name}</p>`).join('');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while searching. Please try again.');
+                });
         }
-        loadAllLocations();
     </script>
 </body>
 </html>
