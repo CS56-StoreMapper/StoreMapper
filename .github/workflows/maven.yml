@@ -15,6 +15,8 @@ jobs:
         run: echo "Workflow is running!"
 
       - uses: actions/checkout@v4
+        with: 
+          lfs: false
 
       - name: Check Git LFS status
         run: git lfs status
