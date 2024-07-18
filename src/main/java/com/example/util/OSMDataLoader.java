@@ -72,6 +72,12 @@ public class OSMDataLoader {
         }
     }
 
+    public <T> List<T> loadData(InputStream inputStream, Function<Map<String, Object>, T> mapper) throws IOException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        List<Map<String, Object>> dataList = objectMapper.readValue(inputStream, new TypeReference<List<Map<String, Object>>>() {});
+        return dataList.stream().map(mapper).collect(Collectors.toList());
+    }
+
     public <T> void saveData(List<T> items, String filename) throws IOException {
         objectMapper.writeValue(new File(filename), items);
     }

@@ -11,6 +11,26 @@
     <param-value>${catalina.base}/conf/logging.properties</param-value>
   </context-param>
 
+  <!-- Configure JSP -->
+  <jsp-config>
+    <jsp-property-group>
+      <url-pattern>*.jsp</url-pattern>
+      <page-encoding>UTF-8</page-encoding>
+      <scripting-invalid>false</scripting-invalid>
+      <include-prelude>/WEB-INF/jspf/taglibs.jspf</include-prelude>
+    </jsp-property-group>
+  </jsp-config>
+
+  <!-- Servlet Mapping (if not using annotations) -->
+  <servlet>
+    <servlet-name>LocationServlet</servlet-name>
+    <servlet-class>com.example.web.LocationServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>LocationServlet</servlet-name>
+    <url-pattern>/</url-pattern>
+  </servlet-mapping>
+
   <welcome-file-list>
     <welcome-file>index.jsp</welcome-file>
   </welcome-file-list>

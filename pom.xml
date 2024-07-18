@@ -81,6 +81,26 @@
       <scope>provided</scope>
     </dependency>
 
+    <!-- Jakarta Standard Tag Library (JSTL) -->
+    <dependency>
+      <groupId>jakarta.servlet.jsp.jstl</groupId>
+      <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+      <version>3.0.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.web</groupId>
+      <artifactId>jakarta.servlet.jsp.jstl</artifactId>
+      <version>3.0.1</version>
+    </dependency>
+
+    <!-- Jakarta Server Pages (JSP) -->
+    <dependency>
+      <groupId>jakarta.servlet.jsp</groupId>
+      <artifactId>jakarta.servlet.jsp-api</artifactId>
+      <version>3.1.1</version>
+      <scope>provided</scope>
+    </dependency>
+
     <!-- For handling compressed files (used in OSM data processing) -->
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -176,5 +196,10 @@
         </plugin>
       </plugins>
     </pluginManagement>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+    </resources>
   </build>
 </project>

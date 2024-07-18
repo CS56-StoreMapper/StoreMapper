@@ -20,6 +20,12 @@ public class Route {
         return nodes;
     }
 
+    public List<Coordinates> getCoordinates() {
+        return nodes.stream()
+                    .map(Node::toCoordinates)
+                    .toList();
+    }
+
     public double getTotalDistance() {
         return totalDistance;
     }
