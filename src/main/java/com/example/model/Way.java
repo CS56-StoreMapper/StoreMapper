@@ -37,7 +37,7 @@ public record Way(Long id, Node startNode, Node endNode, Map<String, Object> dat
         List<?> nodeIds = (List<?>) data.getOrDefault("nodes", Collections.emptyList());
         return nodeIds.stream()
                 .map(Way::toLong)
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()); 
     }
 
     /**
