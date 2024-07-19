@@ -120,6 +120,8 @@ public class OSMDataService {
             return ways;
         }
 
+        Long wayId = ((Number) map.get("id")).longValue();
+
         @SuppressWarnings("unchecked")
         List<Long> nodeIds = ((List<Number>) map.get("nodes")).stream()
                 .map(Number::longValue)
@@ -132,11 +134,11 @@ public class OSMDataService {
             Node endNode = nodes.get(endId);
 
             if (startNode != null && endNode != null) {
-                Way way = Way.create(startNode, endNode, map);
+                Way way = Way.create(wayId, startNode, endNode, map);
                 ways.add(way);
 
                 if (!way.isOneWay()) {
-                    ways.add(Way.create(endNode, startNode, map));
+                    ways.add(Way.create(wayId, endNode, startNode, map));
                 }
             }
         }

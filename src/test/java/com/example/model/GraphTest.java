@@ -62,7 +62,7 @@ class GraphTest {
             Node end = new Node(2, 1.0, 1.0);
             Map<String, String> tags = new HashMap<>();
             tags.put("highway", "residential");
-            Way way = new Way(start, end, Map.of("tags", tags, "nodes", Arrays.asList(1L, 2L)));
+            Way way = new Way(1L, start, end, Map.of("tags", tags, "nodes", Arrays.asList(1L, 2L)));
             
             graph.addNode(start);
             graph.addNode(end);
@@ -79,7 +79,7 @@ class GraphTest {
             Node end = new Node(2, 1.0, 1.0);
             Map<String, String> tags = new HashMap<>();
             tags.put("highway", "residential");
-            Way way = new Way(start, end, Map.of("tags", tags, "nodes", Arrays.asList(1L, 2L)));
+            Way way = new Way(1L, start, end, Map.of("tags", tags, "nodes", Arrays.asList(1L, 2L)));
             
             graph.addNode(start);
             graph.addNode(end);
@@ -107,8 +107,8 @@ class GraphTest {
             graph.addNode(center);
             graph.addNode(north);
             graph.addNode(east);
-            graph.addWay(new Way(center, north, Map.of("tags", tags, "nodes", Arrays.asList(1L, 2L))));
-            graph.addWay(new Way(center, east, Map.of("tags", tags, "nodes", Arrays.asList(1L, 3L))));
+            graph.addWay(new Way(1L, center, north, Map.of("tags", tags, "nodes", Arrays.asList(1L, 2L))));
+            graph.addWay(new Way(2L, center, east, Map.of("tags", tags, "nodes", Arrays.asList(1L, 3L))));
 
             Set<Node> neighbors = graph.getNeighbors(center);
             assertEquals(2, neighbors.size());
@@ -131,8 +131,8 @@ class GraphTest {
             graph.addNode(start);
             graph.addNode(middle);
             graph.addNode(end);
-            graph.addWay(new Way(start, middle, Map.of("tags", tags, "nodes", Arrays.asList(1L, 2L))));
-            graph.addWay(new Way(middle, end, Map.of("tags", tags, "nodes", Arrays.asList(2L, 3L))));
+            graph.addWay(new Way(1L, start, middle, Map.of("tags", tags, "nodes", Arrays.asList(1L, 2L))));
+            graph.addWay(new Way(2L, middle, end, Map.of("tags", tags, "nodes", Arrays.asList(2L, 3L))));
 
             List<Node> path = graph.findShortestPath(start, end);
             assertNotNull(path);

@@ -40,15 +40,15 @@ public class DijkstraPathFinder {
         return null;
     }
 
+    private double calculateDistance(Node node1, Node node2) {
+        return node1.toCoordinates().distanceTo(node2.toCoordinates());
+    }
+
     private List<Node> reconstructPath(Map<Node, Node> previousNodes, Node end) {
         List<Node> path = new ArrayList<>();
         for (Node node = end; node != null; node = previousNodes.get(node)) {
             path.add(0, node);
         }
         return path;
-    }
-
-    private double calculateDistance(Node node1, Node node2) {
-        return node1.toCoordinates().distanceTo(node2.toCoordinates());
-    }
+    }   
 }

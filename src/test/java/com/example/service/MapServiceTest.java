@@ -76,7 +76,7 @@ class MapServiceTest {
         data.put("id", id);
         data.put("nodes", Arrays.asList(start.id(), end.id()));
         data.put("tags", Map.of("highway", "residential"));
-        return new Way(start, end, data);
+        return new Way(id, start, end, data);
     }
 
     @Nested
@@ -226,7 +226,7 @@ class MapServiceTest {
             Coordinates start = new Coordinates(34.0522, -118.2437);
             Coordinates end = new Coordinates(34.0524, -118.2439);
             
-            Route route = mapService.calculateRoute(start, end);
+            Route route = mapService.calculateShortestRoute(start, end);
             
             assertNotNull(route);
             assertEquals(3, route.getNodes().size());
@@ -238,7 +238,7 @@ class MapServiceTest {
             Coordinates start = new Coordinates(34.0522, -118.2437);
             Coordinates end = new Coordinates(34.0522, -118.2437);
             
-            Route route = mapService.calculateRoute(start, end);
+            Route route = mapService.calculateShortestRoute(start, end);
             
             assertNull(route, "Expected null route when start and end are the same");
         }
@@ -248,7 +248,7 @@ class MapServiceTest {
             Coordinates start = new Coordinates(34.0522, -118.2437);
             Coordinates end = new Coordinates(40.7128, -74.0060); // New York City coordinates
             
-            Route route = mapService.calculateRoute(start, end);
+            Route route = mapService.calculateShortestRoute(start, end);
             
             assertNull(route, "Expected null route when end is unreachable");
         }

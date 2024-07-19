@@ -33,7 +33,7 @@ public class MITShortPathsTest extends BaseMapTest {
             new Coordinates(42.36, -71.0907),
             new Coordinates(42.3612, -71.092)
         );
-        Route actualRoute = mapService.calculateRoute(start, end);
+        Route actualRoute = mapService.calculateShortestRoute(start, end);
         System.out.println("Actual route: " + actualRoute.getNodes());
         assertPathEquals(expectedPath, actualRoute.getNodes());
     }
@@ -49,7 +49,7 @@ public class MITShortPathsTest extends BaseMapTest {
             new Coordinates(42.3582, -71.0931),
             new Coordinates(42.3575, -71.0927)
         );
-        Route actualRoute = mapService.calculateRoute(start, end);
+        Route actualRoute = mapService.calculateShortestRoute(start, end);
         assertPathEquals(expectedPath, actualRoute.getNodes());
     }
 
@@ -63,7 +63,7 @@ public class MITShortPathsTest extends BaseMapTest {
             new Coordinates(42.3575, -71.0927),
             new Coordinates(42.355, -71.1009)
         );
-        Route actualRoute = mapService.calculateRoute(start, end);
+        Route actualRoute = mapService.calculateShortestRoute(start, end);
         assertPathEquals(expectedPath, actualRoute.getNodes());
     }
 
@@ -80,7 +80,7 @@ public class MITShortPathsTest extends BaseMapTest {
             new Coordinates(42.3592, -71.0932),
             new Coordinates(42.36, -71.0907)
         );
-        Route actualRoute = mapService.calculateRoute(start, end);
+        Route actualRoute = mapService.calculateShortestRoute(start, end);
         assertPathEquals(expectedPath, actualRoute.getNodes());
     }
 
@@ -90,7 +90,7 @@ public class MITShortPathsTest extends BaseMapTest {
         // Tests node with no outgoing edges
         Coordinates start = new Coordinates(42.3575, -71.0956); // Parking Lot - end of a oneway and not on any other way
         Coordinates end = new Coordinates(42.3575, -71.0940); // close to Kresge
-        Route actualRoute = mapService.calculateRoute(start, end);
+        Route actualRoute = mapService.calculateShortestRoute(start, end);
         assertPathEquals(null, actualRoute != null ? actualRoute.getNodes() : null);
     }
 

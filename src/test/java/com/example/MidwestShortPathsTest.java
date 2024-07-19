@@ -16,16 +16,16 @@ public class MidwestShortPathsTest extends BaseMapTest {
 
     @Test
     public void test00_short() {
-        testRoute("00_short");
+        testRoute("00_short", RouteType.SHORTEST);
     }
 
     @Test
     public void test01_short() {
-        testRoute("01_short");
+        testRoute("01_short", RouteType.SHORTEST);
     }
     
     @Test
     public void test02_short() {
-        testRoute("02_short");
+        testRoute("02_short", RouteType.SHORTEST);
     }
 }

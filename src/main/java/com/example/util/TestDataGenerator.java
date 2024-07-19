@@ -109,12 +109,13 @@ public final class TestDataGenerator {
 
         List<Long> nodeIds = nodes.stream().map(Node::id).collect(Collectors.toList());
 
+        Long id = random.nextLong(10000);
         Map<String, Object> data = new HashMap<>();
-        data.put("id", random.nextLong(10000));
+        data.put("id", id);
         data.put("nodes", nodeIds);
         data.put("tags", tags);
 
-        Way way = new Way(nodes.get(0), nodes.get(nodes.size() - 1), data);
+        Way way = new Way(id, nodes.get(0), nodes.get(nodes.size() - 1), data);
         // System.out.println("Created way: " + way);
         return way;
     }

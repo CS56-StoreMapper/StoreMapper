@@ -10,9 +10,11 @@ import java.util.stream.Collectors;
 public class Route {
     private final List<Node> nodes;
     private double totalDistance;
+    private Graph graph;
 
-    public Route(List<Node> nodes) {
+    public Route(List<Node> nodes, Graph graph) {
         this.nodes = nodes;
+        this.graph = graph;
         this.totalDistance = calculateTotalDistance();
     }
 
@@ -27,7 +29,26 @@ public class Route {
     }
 
     public double getTotalDistance() {
+        double totalDistance = 0;
+        List<Node> nodes = getNodes();
+        for (int i = 0; i < nodes.size() - 1; i++) {
+            totalDistance += nodes.get(i).toCoordinates().distanceTo(nodes.get(i + 1).toCoordinates());
+        }
         return totalDistance;
+    }
+
+    public double getEstimatedTime(boolean fastest) {
+        double totalTime = 0;
+        List<Node> nodes = getNodes();
+        for (int i = 0; i < nodes.size() - 1; i++) {
+            Node start = nodes.get(i);
+            Node end = nodes.get(i + 1);
+            Way way = graph.getWay(start, end);
+            double distance = start.toCoordinates().distanceTo(end.toCoordinates());
+            int speedLimitMph = way.getSpeedLimitMph();
+            totalTime += distance / (speedLimitMph * 1609.34 / 3600); // Convert mph to m/s
+        }
+        return totalTime;
     }
 
     private double calculateTotalDistance() {
