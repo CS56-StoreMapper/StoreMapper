@@ -47,6 +47,11 @@ public abstract class BaseMapTest {
     protected LocationService locationService;
     private final OSMDataLoader osmDataLoader = new OSMDataLoader();
 
+    protected enum RouteType {
+        SHORTEST,
+        FASTEST
+    }
+
     @BeforeAll
     public void setUp() throws IOException, ClassNotFoundException {
         long maxHeapSize = Runtime.getRuntime().maxMemory();
@@ -78,7 +83,7 @@ public abstract class BaseMapTest {
         logger.info("Calling findNearestLocation with coordinates: " + testPoint);
         Optional<Location> nearestLocation = mapService.findNearestLocation(testPoint, null);
         logger.info("Nearest location: " + nearestLocation);
-        logger.info("setUp method completed");
+        // logger.info("setUp method completed");
 
     }
 
@@ -134,13 +139,18 @@ public abstract class BaseMapTest {
         System.out.println("Route verified with " + actualNodes.size() + " nodes and total distance of " + routeLength + " units");
     }
 
-    protected void testRoute(String testName) {
+    protected void testRoute(String testName, RouteType routeType) {
         List<List<Double>> expectedPath = readExpectedPath(testName);
         
         Coordinates start = new Coordinates(expectedPath.get(0).get(0), expectedPath.get(0).get(1));
         Coordinates end = new Coordinates(expectedPath.get(expectedPath.size() - 1).get(0), expectedPath.get(expectedPath.size() - 1).get(1));
         
-        Route actualRoute = mapService.calculateRoute(start, end);
+        Route actualRoute;
+        if (routeType == RouteType.SHORTEST) {
+            actualRoute = mapService.calculateShortestRoute(start, end);
+        } else {
+            actualRoute = mapService.calculateFastestRoute(start, end);
+        }
         
         assertNotNull(actualRoute, "Expected a route to be found, but no route was returned.");
         assertFalse(actualRoute.getNodes().isEmpty(), "Expected a non-empty route");

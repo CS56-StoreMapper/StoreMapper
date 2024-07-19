@@ -4,7 +4,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import static java.util.Map.entry;
 import java.util.stream.Collectors;
+import com.example.util.RoadUtil;
+import java.util.logging.Logger;
 
 /**
  * Represents a segment of an OpenStreetMap (OSM) way.
@@ -14,7 +17,11 @@ import java.util.stream.Collectors;
  *
  * This class represents a segment of such a way, defined by its start and end nodes.
  */
-public record Way(Node startNode, Node endNode, Map<String, Object> data) {
+
+
+public record Way(Long id, Node startNode, Node endNode, Map<String, Object> data) {
+
+    private static final Logger logger = Logger.getLogger(Way.class.getName());
 
     public Way {
         data = data == null ? Map.of() : new HashMap<>(data);
@@ -30,7 +37,7 @@ public record Way(Node startNode, Node endNode, Map<String, Object> data) {
         List<?> nodeIds = (List<?>) data.getOrDefault("nodes", Collections.emptyList());
         return nodeIds.stream()
                 .map(Way::toLong)
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()); 
     }
 
     /**
@@ -90,8 +97,8 @@ public record Way(Node startNode, Node endNode, Map<String, Object> data) {
      * @param data A Map containing OSM Way data
      * @return A new Way object
      */
-    public static Way create(Node startNode, Node endNode, Map<String, Object> data) {
-        return new Way(startNode, endNode, data);
+    public static Way create(Long id, Node startNode, Node endNode, Map<String, Object> data) {
+        return new Way(id, startNode, endNode, data);
     }
 
     /**
@@ -110,6 +117,16 @@ public record Way(Node startNode, Node endNode, Map<String, Object> data) {
      */
     public static Way fromMap(Map<String, Object> map) {
         try {
+            Object idObj = map.get("id");
+            Long id;
+            if (idObj instanceof Long) {
+                id = (Long) idObj;
+            } else if (idObj instanceof Integer) {
+                id = ((Integer) idObj).longValue();
+            } else {
+                throw new IllegalArgumentException("Invalid map data for Way: " + map);
+            }
+
             @SuppressWarnings("unchecked")
             List<?> nodeIds = (List<?>) map.get("nodes");
             if (nodeIds == null || nodeIds.isEmpty()) {
@@ -122,9 +139,9 @@ public record Way(Node startNode, Node endNode, Map<String, Object> data) {
             Node startNode = new Node(longNodeIds.get(0), 0, 0);
             Node endNode = new Node(longNodeIds.get(longNodeIds.size() - 1), 0, 0);
     
-            return new Way(startNode, endNode, map);
+            return new Way(id, startNode, endNode, map);
         } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid map data for Way: " + map, e);
+            throw new IllegalArgumentException("Invalid map data for Way: " + map);
         }
     }
 
@@ -139,7 +156,7 @@ public record Way(Node startNode, Node endNode, Map<String, Object> data) {
     }
 
     public Way withNodes(Node newStartNode, Node newEndNode) {
-        return new Way(newStartNode, newEndNode, this.data);
+        return new Way(id, newStartNode, newEndNode, this.data);
     }
 
     /**
@@ -160,10 +177,29 @@ public record Way(Node startNode, Node endNode, Map<String, Object> data) {
         return getTags().get("highway");
     }
 
+    public int getSpeedLimitMph() {
+        Object maxSpeedMph = getTags().get("maxspeed_mph");
+        if (maxSpeedMph != null) {
+            try {
+                if (maxSpeedMph instanceof String) {
+                    return Integer.parseInt((String) maxSpeedMph);
+                } else if (maxSpeedMph instanceof Integer) {
+                    return (Integer) maxSpeedMph;
+                }
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Invalid maxspeed_mph value: " + maxSpeedMph);
+            }
+        }
+        String highwayType = getHighwayType();
+        // logger.info("Using default speed limit for way " + id + " with highway type: " + highwayType);
+        return RoadUtil.getDefaultSpeedLimit(highwayType);
+    }
+
     @Override
     public String toString() {
         return "Way{" +
-                "startNode=" + startNode +
+                "id=" + id +
+                ", startNode=" + startNode +
                 ", endNode=" + endNode +
                 ", tags=" + getTags() +
                 '}';

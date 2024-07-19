@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.nio.file.Paths;
 
 import com.google.gson.Gson;
 
@@ -166,9 +164,11 @@ public class LocationServlet extends HttpServlet {
         String startLonParam = request.getParameter("startLon");
         String endLatParam = request.getParameter("endLat");
         String endLonParam = request.getParameter("endLon");
+        String routeType = request.getParameter("type"); 
+        routeType = (routeType == null) ? "fastest" : routeType; // Default to fastest if not provided
 
         logger.info("Route request received - Start: " + startLatParam + ", " + startLonParam + 
-                " End: " + endLatParam + ", " + endLonParam);
+                " End: " + endLatParam + ", " + endLonParam + " Type: " + routeType);
 
         if (startLatParam == null || startLonParam == null || endLatParam == null || endLonParam == null) {
             sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "Missing required parameters");
@@ -185,15 +185,29 @@ public class LocationServlet extends HttpServlet {
             Coordinates start = new Coordinates(startLat, startLon);
             Coordinates end = new Coordinates(endLat, endLon);
 
-            Route route = mapService.calculateRoute(start, end);
+            Route route;
+            if ("fastest".equals(routeType)) {
+                route = mapService.calculateFastestRoute(start, end);
+            } else {
+                route = mapService.calculateShortestRoute(start, end);
+            }
+
+            if (route == null) {
+                sendErrorResponse(response, HttpServletResponse.SC_NOT_FOUND, "No route found");
+                return;
+            }
+
+            double distanceKm = route.getTotalDistance();
+            double estimatedTimeMinutes = route.getEstimatedTime(routeType.equals(routeType));
 
             Map<String, Object> routeData = new HashMap<>();
             routeData.put("coordinates", route.getNodes().stream()
                                             .map(node -> Map.of("latitude", node.lat(), "longitude", node.lon()))
                                             .toList());
-            routeData.put("distance", String.format("%.2f", route.getTotalDistance())); // Convert to km and format
-            routeData.put("estimatedTime", Math.round(route.getTotalDistance() / 50)); // Convert to minutes and round
-
+            routeData.put("distance", String.format("%.2f", distanceKm)); // Convert to km and format
+            logger.info("Distance: " + distanceKm);
+            routeData.put("estimatedTime", String.format("%.2f", estimatedTimeMinutes));
+            logger.info("Estimated time: " + estimatedTimeMinutes + " minutes");
 
             sendJsonResponse(response, routeData);
         } catch (NumberFormatException e) {

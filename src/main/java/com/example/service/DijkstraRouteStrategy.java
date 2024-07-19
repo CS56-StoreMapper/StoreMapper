@@ -18,7 +18,7 @@ public class DijkstraRouteStrategy implements RouteStrategy {
         if (path == null || path.isEmpty()) {
             return null;
         }
-        return new Route(path);
+        return new Route(path, graph);
     }
 
     @Override

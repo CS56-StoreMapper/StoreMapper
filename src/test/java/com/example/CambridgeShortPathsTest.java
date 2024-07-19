@@ -20,31 +20,31 @@ public class CambridgeShortPathsTest extends BaseMapTest {
 
     @Test
     public void test00_short() {
-        testRoute("00_short");  
+        testRoute("00_short", RouteType.SHORTEST);  
     }
 
     @Test
     public void test01_short() {
-        testRoute("01_short");
+        testRoute("01_short", RouteType.SHORTEST);
     }
     
     @Test
     public void test02_short() {
-        testRoute("02_short");
+        testRoute("02_short", RouteType.SHORTEST);
     }
 
     @Test
     public void test03_short() {
-        testRoute("03_short");
+        testRoute("03_short", RouteType.SHORTEST);
     }
 
     @Test
     public void test04_short() {
-        testRoute("04_short");
+        testRoute("04_short", RouteType.SHORTEST);
     }
 
     @Test
     public void test05_short() {
-        testRoute("05_short");
+        testRoute("05_short", RouteType.SHORTEST);
     }
 }

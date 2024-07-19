@@ -232,7 +232,11 @@
             if (location.osmNode.tags.brand) content += 'Brand: ' + location.osmNode.tags.brand + '<br>';
             if (location.osmNode.tags['addr:street']) content += 'Street: ' + location.osmNode.tags['addr:street'] + '<br>';
             if (location.osmNode.tags['addr:housenumber']) content += 'House Number: ' + location.osmNode.tags['addr:housenumber'] + '<br>';
-            content += '<button onclick="routeToLocation(' + location.coordinates.latitude + ', ' + location.coordinates.longitude + ')">Route to Here</button>';
+            content += '<select id="popup-route-type-' + location.id + '">' +
+                       '<option value="shortest">Shortest Route</option>' +
+                       '<option value="fastest">Fastest Route</option>' +
+                       '</select>';
+            content += '<button onclick="routeToLocation(' + location.coordinates.latitude + ', ' + location.coordinates.longitude + ', \'' + location.id + '\')">Route to Here</button>';
             return content;
         }
         
@@ -243,15 +247,14 @@
             return content;
         }
 
-        var routingControl = null;
-
-        function routeToLocation(lat, lon) {
+        function routeToLocation(lat, lon, locationId) {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     function(position) {
                         var start = L.latLng(position.coords.latitude, position.coords.longitude);
                         var end = L.latLng(lat, lon);
-                        createRoute(start, end);
+                        var routeType = document.getElementById('popup-route-type-' + locationId).value;
+                        createRoute(start, end, routeType);
                     },
                     function(error) {
                         console.error("Error getting current location:", error);
@@ -263,23 +266,20 @@
             }
         }
 
-        function createRoute(start, end) {
-            if (routingControl) {
-                map.removeControl(routingControl);
-            }
+        function createRoute(start, end, routeType) {
             if (currentRoute) {
                 map.removeLayer(currentRoute);
             }
 
-            console.log("Start:", start, "End:", end);
+            console.log("Start:", start, "End:", end, "Route Type:", routeType);
 
-            // Correctly access lat and lng properties
             const startLat = start.lat;
             const startLon = start.lng;
             const endLat = end.lat;
             const endLon = end.lng;
             
-            fetch('/route?startLat=' + startLat + '&startLon=' + startLon + '&endLat=' + endLat + '&endLon=' + endLon)
+            fetch('/route?startLat=' + startLat + '&startLon=' + startLon + 
+                  '&endLat=' + endLat + '&endLon=' + endLon + '&type=' + routeType)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok');
@@ -287,28 +287,39 @@
                     return response.json();
                 })
                 .then(routeData => {
-                    console.log("Route data received:", routeData); 
-                    currentRoute = L.polyline(routeData.coordinates.map(function(coord) {
-                        return [coord.latitude, coord.longitude];
-                    }), {color: 'blue', opacity: 0.6, weight: 4}).addTo(map);
+                    console.log("Route data received:", JSON.stringify(routeData, null, 2));
+                    currentRoute = L.polyline(
+                        routeData.coordinates.map(({latitude, longitude}) => [latitude, longitude]),
+                        {color: 'blue', opacity: 0.6, weight: 4}
+                    ).addTo(map);
                     map.fitBounds(currentRoute.getBounds());
-                    
-                    alert(`Distance: ${routeData.distance} km\nEstimated time: ${routeData.estimatedTime} minutes`);
+
+                    var message = '';
+                    if (routeData.distance !== undefined) {
+                        var distance = parseFloat(routeData.distance);
+                        message += 'Distance: ' + distance.toFixed(2) + ' km\n';
+                    }
+                    if (routeData.estimatedTime !== undefined) {
+                        var time = parseFloat(routeData.estimatedTime);
+                        message += 'Estimated time: ' + time.toFixed(2) + ' minutes';
+                    }
+
+                    if (message) {
+                        alert(message);
+                    } else {
+                        alert('Route calculated, but no distance or time information available.');
+                    }
                 })
                 .catch(error => {
                     console.error('Error fetching route:', error);
                     alert('Unable to calculate route. Please try again.');
                 });
-            }
+        }
 
         function clearRoute() {
-            if (routingControl) {
-                map.removeControl(routingControl);
-                routingControl = null;
-                if (currentRoute) {
-                    map.removeLayer(currentRoute);
-                    currentRoute = null;
-                }
+            if (currentRoute) {
+                map.removeLayer(currentRoute);
+                currentRoute = null;
             }
         }
     </script>

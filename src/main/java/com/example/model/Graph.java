@@ -4,11 +4,20 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.logging.Logger;
 
+/**
+ * Represents a graph of the road network, storing nodes and ways from OpenStreetMap data.
+ * This class provides methods for building and querying the graph structure.
+ */
 public class Graph {
     private static final Logger logger = Logger.getLogger(Graph.class.getName());
 
-    private final Map<Long, Node> nodes;
-    private final Map<Long, Set<Long>> adjacencyList;
+    /** Maps node IDs to Node objects for quick lookup. */
+    private final Map<Long, Node> nodesById;
+    /**
+     * Stores the graph structure. For each node, it maps to another map
+     * where the keys are neighboring nodes and the values are the Ways connecting them.
+     */
+    private Map<Node, Map<Node, Way>> adjacencyList;
 
     private static final Set<String> ALLOWED_HIGHWAY_TYPES = Set.of(
         "motorway", "trunk", "primary", "secondary", "tertiary", "unclassified",
@@ -16,23 +25,44 @@ public class Graph {
         "primary_link", "secondary_link", "tertiary_link"
     );
 
+    /**
+     * Constructs an empty graph.
+     */
     public Graph() {
         this(new ArrayList<>(), new ArrayList<>());
     }
 
+    /**
+     * Constructs a graph from the given lists of nodes and ways.
+     * 
+     * @param nodes List of nodes to add to the graph
+     * @param ways List of ways to add to the graph
+     */
     public Graph(List<Node> nodes, List<Way> ways) {
-        this.nodes = new HashMap<>();
+        this.nodesById = new HashMap<>();
         this.adjacencyList = new HashMap<>();
             
         nodes.forEach(this::addNode);
         ways.forEach(this::addWay);
     }
 
+    /**
+     * Adds a node to the graph if it doesn't already exist.
+     * 
+     * @param node The node to add
+     */
     public void addNode(Node node) {
-        nodes.putIfAbsent(node.id(), node);
-        adjacencyList.putIfAbsent(node.id(), new HashSet<>());
+        nodesById.putIfAbsent(node.id(), node);
+        adjacencyList.putIfAbsent(node, new HashMap<>());
     }
 
+    /**
+     * Adds a way to the graph, creating edges between its nodes.
+     * Only ways with allowed highway types are added.
+     * For non-oneway roads, edges are added in both directions.
+     * 
+     * @param way The way to add
+     */
     public void addWay(Way way) {
         String highwayType = way.getTags().get("highway");
         if (highwayType == null || !ALLOWED_HIGHWAY_TYPES.contains(highwayType)) {
@@ -43,48 +73,110 @@ public class Graph {
         for (int i = 0; i < nodeIds.size() - 1; i++) {
             Long startId = nodeIds.get(i);
             Long endId = nodeIds.get(i + 1);
-            addNodeIfAbsent(startId);
-            addNodeIfAbsent(endId);
-            adjacencyList.computeIfAbsent(startId, k -> new HashSet<>()).add(endId);
+            Node startNode = addNodeIfAbsent(startId);
+            Node endNode = addNodeIfAbsent(endId);
+            addEdge(startNode, endNode, way);
             
             if (!way.isOneWay()) {
-                adjacencyList.computeIfAbsent(endId, k -> new HashSet<>()).add(startId);
+                addEdge(endNode, startNode, way);
             }
         }
     }
 
-    private void addNodeIfAbsent(Long id) {
-        nodes.computeIfAbsent(id, k -> new Node(id, 0, 0));
+    /**
+     * Adds a node to the graph if it doesn't exist, or returns the existing node.
+     * Note: This method creates a new Node with default coordinates (0, 0) if not found.
+     * 
+     * @param id The ID of the node
+     * @return The existing or newly created Node
+     */
+    private Node addNodeIfAbsent(Long id) {
+        return nodesById.computeIfAbsent(id, k -> new Node(id, 0, 0));
     }
 
+    
+    /**
+     * Adds an edge between two nodes in the graph.
+     * If multiple ways connect the same nodes, the one with the highest speed limit is kept.
+     * 
+     * @param start The starting node of the edge
+     * @param end The ending node of the edge
+     * @param way The way representing this edge
+     */
+    private void addEdge(Node start, Node end, Way way) {
+        adjacencyList.computeIfAbsent(start, k -> new HashMap<>())
+            .merge(end, way, (existingWay, newWay) -> 
+                existingWay.getSpeedLimitMph() > newWay.getSpeedLimitMph() ? existingWay : newWay);
+    }
+
+     /**
+     * Returns a list of all nodes in the graph.
+     * 
+     * @return List of all Node objects in the graph
+     */
     public List<Node> getNodes() {
-        return new ArrayList<>(nodes.values());
+        return new ArrayList<>(nodesById.values());
     }
 
+    /**
+     * Retrieves a node by its ID.
+     * 
+     * @param id The ID of the node
+     * @return The Node object with the given ID, or null if not found
+     */
     public Node getNode(long id) {
-        return nodes.get(id);
+        return nodesById.get(id);
     }
 
+    /**
+     * Retrieves all neighboring nodes for a given node.
+     * 
+     * This method returns a Set of all nodes that are directly connected to the given node.
+     * If the node has no neighbors or doesn't exist in the graph, an empty Set is returned.
+     * 
+     * @param node The node whose neighbors are to be retrieved.
+     * @return A Set of Node objects representing the neighbors of the given node.
+     *         Returns an empty Set if the node has no neighbors or doesn't exist in the graph.
+     */
     public Set<Node> getNeighbors(Node node) {
-        Set<Long> neighborIds = adjacencyList.get(node.id());
-        if (neighborIds == null) {
-            return Collections.emptySet();
-        }
-        return neighborIds.stream()
-                .map(this::getNode)
-                .collect(Collectors.toSet());
+        return adjacencyList.getOrDefault(node, Collections.emptyMap()).keySet();
+    }
+
+    /**
+     * Retrieves the Way object connecting two nodes.
+     * 
+     * This method returns the Way object that represents the connection between the start and end nodes.
+     * If there is no direct connection between the nodes, or if either node doesn't exist in the graph,
+     * null is returned.
+     * 
+     * @param start The starting node of the connection.
+     * @param end The ending node of the connection.
+     * @return The Way object representing the connection between start and end nodes,
+     *         or null if no such connection exists.
+     */
+    public Way getWay(Node start, Node end) {
+        return adjacencyList.getOrDefault(start, Collections.emptyMap()).get(end);
     }
 
 
+    
+    /**
+     * Finds the nearest relevant node in the graph to the given coordinates.
+     * A node is considered relevant if it has at least one neighbor, meaning
+     * it's connected to other nodes in the graph.
+     *
+     * @param coordinates The coordinates to which the nearest node should be found.
+     * @return The nearest relevant node to the given coordinates, or null if no
+     *         relevant nodes are found in the graph.
+     */
     public Node findNearestRelevantNode(Coordinates coordinates) {
         Node nearest = null;
         double minDistance = Double.MAX_VALUE;
-        for (Map.Entry<Long, Set<Long>> entry : adjacencyList.entrySet()) {
-            Long nodeId = entry.getKey();
-            Set<Long> neighbors = entry.getValue();
+        for (Map.Entry<Node, Map<Node, Way>> entry : adjacencyList.entrySet()) {
+            Node node = entry.getKey();
+            Map<Node, Way> neighbors = entry.getValue();
             // A node is considered relevant if it has neighbors
             if (!neighbors.isEmpty()) {
-                Node node = nodes.get(nodeId);
                 double distance = node.toCoordinates().distanceTo(coordinates);
                 if (distance < minDistance) {
                     minDistance = distance;
@@ -99,24 +191,56 @@ public class Graph {
         return nearest;
     }
 
+    /**
+     * Finds the shortest path between two nodes using Dijkstra's algorithm.
+     * This method delegates the pathfinding to a DijkstraPathFinder instance.
+     *
+     * @param start The starting node of the path.
+     * @param end The ending node of the path.
+     * @return A List of Nodes representing the shortest path from start to end,
+     *         or null if no path is found.
+     */
     public List<Node> findShortestPath(Node start, Node end) {
         return new DijkstraPathFinder(this).findShortestPath(start, end);
     }
 
+    /**
+     * Returns the total number of nodes in the graph.
+     *
+     * @return The number of nodes in the graph.
+     */
     public int getNodeCount() {
-        return nodes.size();
+        return nodesById.size();
     }
 
+    /**
+     * Counts the total number of unique connections (ways) in the graph.
+     * 
+     * This method counts each connection only once, regardless of whether it's
+     * a one-way or two-way connection. For example, if nodes A and B are connected,
+     * it's counted as one connection, not two.
+     *
+     * @return The total number of unique connections in the graph.
+     */
     public int getWayCount() {
         Set<Connection> countedConnections = new HashSet<>();
 
-        for (Map.Entry<Long, Set<Long>> entry : adjacencyList.entrySet()) {
-            Long fromNodeId = entry.getKey();
-            for (Long toNodeId : entry.getValue()) {
-                countedConnections.add(new Connection(fromNodeId, toNodeId));
+        for (Map.Entry<Node, Map<Node, Way>> entry : adjacencyList.entrySet()) {
+            Node fromNode = entry.getKey();
+            for (Node toNode : entry.getValue().keySet()) {
+                countedConnections.add(new Connection(fromNode.id(), toNode.id()));
             }
         }
         return countedConnections.size();
+    }
+
+    /**
+     * Returns a set of all node IDs in the graph.
+     * 
+     * @return Set of all node IDs in the graph
+     */
+    public Set<Long> getNodeIds() {
+        return nodesById.keySet();
     }
 
     /**
@@ -150,22 +274,44 @@ public class Graph {
         }
     }
 
+    /**
+     * Prints the structure of the graph for debugging purposes.
+     * This method logs the total number of nodes, connections, and
+     * the neighbors of each node in the graph.
+     */
     public void printGraphStructure() {
         logger.info(() -> "Graph Structure:");
-        logger.info(() -> "Total nodes: " + nodes.size());
+        logger.info(() -> "Total nodes: " + nodesById.size());
         logger.info(() -> "Total connections: " + getWayCount());
-        adjacencyList.forEach((nodeId, neighbors) -> {
-            logger.info(() -> "Node: " + nodes.get(nodeId));
-            logger.info(() -> "  Neighbors: " + neighbors);
+        adjacencyList.forEach((node, neighbors) -> {
+            logger.info(() -> "Node: " + node);
+            logger.info(() -> "  Neighbors: " + neighbors.keySet());
         });
     }
 
+    /**
+     * Prints the adjacency list for a specific node for debugging purposes.
+     * This method logs the neighbors of the specified node and the ways
+     * connecting them.
+     *
+     * @param nodeId The ID of the node whose adjacency list should be printed.
+     */
     public void printNodeAdjacencyList(long nodeId) {
-        Set<Long> neighbors = adjacencyList.get(nodeId);
-        if (neighbors == null) {
-            logger.info(() -> "No adjacency list for node " + nodeId);
+        Node node = nodesById.get(nodeId);
+        if (node == null) {
+            logger.info(() -> "Node with ID " + nodeId + " not found in the graph.");
+            return;
         } else {
-            logger.info(() -> "Neighbors of node " + nodeId + ": " + neighbors);
+            Map<Node, Way> neighbors = adjacencyList.get(node);
+            if (neighbors == null || neighbors.isEmpty()) {
+                logger.info(() -> "Node with ID " + nodeId + " has no neighbors.");
+            } else {
+                logger.info(() -> "Node with ID " + nodeId + " has the following neighbors:");
+                neighbors.forEach((neighbor, way) -> {
+                    logger.info(() -> "  Neighbor: " + neighbor + " via way: " + way);
+                });
+            }
         }
+        
     }
 }

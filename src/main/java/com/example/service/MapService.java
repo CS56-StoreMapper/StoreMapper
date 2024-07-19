@@ -34,7 +34,8 @@ public final class MapService {
 
     private final LocationService locationService;
     private final Graph graph;
-    private final RouteStrategy routeStrategy;
+    private final RouteStrategy shortestRouteStrategy;
+    private final RouteStrategy fastestRouteStrategy;
 
     private static final double MAX_DISTANCE_KM = 5.0; // Maximum distance to consider a point reachable
 
@@ -62,26 +63,35 @@ public final class MapService {
     }
 
     /**
-     * Constructs a new MapService with a specified RouteStrategy.
-     *G
+     * Constructs a new MapService with specified RouteStrategies.
+     *
      * @param locationService The location service to use for retrieving location data.
      * @param graph The graph representing the road network.
-     * @param routeStrategy The route strategy to use for calculating routes.
+     * @param shortestRouteStrategy The route strategy to use for calculating shortest routes.
+     * @param fastestRouteStrategy The route strategy to use for calculating fastest routes.
      */
-    public MapService(final LocationService locationService, final Graph graph, final RouteStrategy routeStrategy) {
+    public MapService(final LocationService locationService, 
+                      final Graph graph, 
+                      final RouteStrategy shortestRouteStrategy,
+                      final RouteStrategy fastestRouteStrategy) {
         this.locationService = Objects.requireNonNull(locationService, "LocationService must not be null");
         this.graph = Objects.requireNonNull(graph, "Graph must not be null");
-        this.routeStrategy = Objects.requireNonNull(routeStrategy, "RouteStrategy must not be null");
+        this.shortestRouteStrategy = Objects.requireNonNull(shortestRouteStrategy, "ShortestRouteStrategy must not be null");
+        this.fastestRouteStrategy = Objects.requireNonNull(fastestRouteStrategy, "FastestRouteStrategy must not be null");
     }
 
     /**
-     * Constructs a new MapService with a default DijkstraRouteStrategy.
+     * Constructs a new MapService with default DijkstraRouteStrategy for shortest paths
+     * and FastestRouteStrategy for fastest paths.
      *
      * @param locationService The location service to use for retrieving location data.
      * @param graph The graph representing the road network.
      */
     public MapService(final LocationService locationService, final Graph graph) {
-        this(locationService, graph, new DijkstraRouteStrategy(graph));
+        this(locationService, 
+             graph, 
+             new DijkstraRouteStrategy(graph),
+             new FastestRouteStrategy(graph));
     }
 
     /**
@@ -149,10 +159,10 @@ public final class MapService {
     }
 
     public Route calculateRoute(final Location start, final Location end) {
-        return calculateRoute(start.getCoordinates(), end.getCoordinates());
+        return calculateShortestRoute(start.getCoordinates(), end.getCoordinates());
     }
 
-    public Route calculateRoute(final Coordinates start, final Coordinates end) {
+    public Route calculateShortestRoute(final Coordinates start, final Coordinates end) {
         Node startNode = graph.findNearestRelevantNode(start);
         Node endNode = graph.findNearestRelevantNode(end);
 
@@ -176,7 +186,7 @@ public final class MapService {
             return null;
         }
 
-        Route route = routeStrategy.calculateRoute(startNode, endNode);
+        Route route = shortestRouteStrategy.calculateRoute(startNode, endNode);
         if (route == null) {
             System.out.println("No route found between " + start + " and " + end);
             return null;
@@ -185,6 +195,37 @@ public final class MapService {
         System.out.println("Route found: " + route.getNodes().size() + " nodes, start: " + route.getNodes().get(0) + ", end: " + route.getNodes().get(route.getNodes().size() - 1));
         return route;
 
+    }
+
+    public Route calculateFastestRoute(final Coordinates start, final Coordinates end) {
+        Node startNode = graph.findNearestRelevantNode(start);
+        Node endNode = graph.findNearestRelevantNode(end);
+
+        if (startNode == null || endNode == null) {
+            logger.warning("No route possible: start or end nodes not found");
+            return null;
+        }
+
+        if (startNode.equals(endNode)) {
+            logger.info("Start and end nodes are the same");
+            return null;
+        }
+
+        // Check if end point is too far from the nearest node
+        double endNodeDistance = end.distanceTo(new Coordinates(endNode.lat(), endNode.lon()));
+        if (endNodeDistance > MAX_DISTANCE_KM) {
+            logger.warning("End point is too far from the nearest node: " + endNodeDistance + " km");
+            return null;
+        }
+
+        Route route = fastestRouteStrategy.calculateRoute(startNode, endNode);
+        if (route == null || route.getNodes().isEmpty()) {
+            logger.warning("No route found between " + start + " and " + end);
+            return null;
+        }
+
+        logger.info("Fastest route found: " + route.getNodes().size() + " nodes, start: " + route.getNodes().get(0) + ", end: " + route.getNodes().get(route.getNodes().size() - 1));
+        return route;
     }
 
     private Node findNearestGraphNode(Coordinates coordinates) {

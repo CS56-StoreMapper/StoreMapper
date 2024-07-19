@@ -3,7 +3,7 @@ package com.example;
 import org.junit.jupiter.api.Test;
 import com.example.model.Coordinates;
 
-public class MidwestShortPathsTest extends BaseMapTest {
+public class MidwestFastPathsTest extends BaseMapTest {
     @Override
     protected String getDatasetName() {
         return "midwest";
@@ -15,17 +15,17 @@ public class MidwestShortPathsTest extends BaseMapTest {
     }
 
     @Test
-    public void test00_short() {
-        testRoute("00_short", RouteType.SHORTEST);
+    public void test00_fast() {
+        testRoute("00_fast", RouteType.FASTEST);
     }
 
     @Test
-    public void test01_short() {
-        testRoute("01_short", RouteType.SHORTEST);
+    public void test01_fast() {
+        testRoute("01_fast", RouteType.FASTEST);
     }
     
     @Test
-    public void test02_short() {
-        testRoute("02_short", RouteType.SHORTEST);
+    public void test02_fast() {
+        testRoute("02_fast", RouteType.FASTEST);
     }
 }
