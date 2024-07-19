@@ -100,7 +100,8 @@
 1. Complete Documentation:
    - Finish updating JavaDocs for all modified classes
    - Create the overall architecture documentation
-2. Enhance Performance Optimization:
+2. Start Performance Optimization:
+   - Implement basic spatial indexing for nearest-node queries
    - Implement more robust spatial indexing (e.g., k-d tree or quadtree)
    - Profile and optimize Graph operations
 3. Enhance Error Handling and Edge Cases:
