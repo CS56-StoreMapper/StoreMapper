@@ -38,7 +38,7 @@ public class Route {
     }
 
     public double getEstimatedTime(boolean fastest) {
-        double totalTime = 0;
+        double totalTimeHours = 0;
         List<Node> nodes = getNodes();
         for (int i = 0; i < nodes.size() - 1; i++) {
             Node start = nodes.get(i);
@@ -46,9 +46,13 @@ public class Route {
             Way way = graph.getWay(start, end);
             double distance = start.toCoordinates().distanceTo(end.toCoordinates());
             int speedLimitMph = way.getSpeedLimitMph();
-            totalTime += distance / (speedLimitMph * 1609.34 / 3600); // Convert mph to m/s
+            double segmentTimeHours = distance / (speedLimitMph * 1609.34 / 3600);
+            totalTimeHours += segmentTimeHours;
+            
+            System.out.println("Segment " + i + ": Distance = " + distance + "m, Speed = " + speedLimitMph + "mph, Time = " + (segmentTimeHours * 60) + " minutes");
         }
-        return totalTime;
+        System.out.println("Total estimated time: " + (totalTimeHours * 60) + " minutes");
+        return totalTimeHours * 60; // Convert hours to minutes
     }
 
     private double calculateTotalDistance() {

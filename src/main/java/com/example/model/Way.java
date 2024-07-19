@@ -191,7 +191,7 @@ public record Way(Long id, Node startNode, Node endNode, Map<String, Object> dat
             }
         }
         String highwayType = getHighwayType();
-        logger.info("Using default speed limit for way " + id + " with highway type: " + highwayType);
+        // logger.info("Using default speed limit for way " + id + " with highway type: " + highwayType);
         return RoadUtil.getDefaultSpeedLimit(highwayType);
     }
 

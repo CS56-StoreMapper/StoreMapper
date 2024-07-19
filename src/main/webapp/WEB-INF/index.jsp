@@ -88,10 +88,6 @@
             </c:forEach>
         </select>
         <select id="type-select"></select>
-        <select id="route-type-select">
-            <option value="shortest">Shortest Route</option>
-            <option value="fastest">Fastest Route</option>
-        </select>
         <input type="text" id="search-input" placeholder="Search...">
         <input type="number" id="radius-input" placeholder="Radius (km)" value="20">
         <button onclick="performSearch()">Search</button>
@@ -275,7 +271,7 @@
                 map.removeLayer(currentRoute);
             }
 
-            console.log("Start:", start, "End:", end);
+            console.log("Start:", start, "End:", end, "Route Type:", routeType);
 
             const startLat = start.lat;
             const startLon = start.lng;
@@ -291,14 +287,28 @@
                     return response.json();
                 })
                 .then(routeData => {
-                    console.log("Route data received:", routeData); 
+                    console.log("Route data received:", JSON.stringify(routeData, null, 2));
                     currentRoute = L.polyline(
                         routeData.coordinates.map(({latitude, longitude}) => [latitude, longitude]),
                         {color: 'blue', opacity: 0.6, weight: 4}
                     ).addTo(map);
                     map.fitBounds(currentRoute.getBounds());
-                    
-                    alert(`Distance: ${routeData.distance.toFixed(2)} km\nEstimated time: ${routeData.estimatedTime.toFixed(2)} minutes`);
+
+                    var message = '';
+                    if (routeData.distance !== undefined) {
+                        var distance = parseFloat(routeData.distance);
+                        message += 'Distance: ' + distance.toFixed(2) + ' km\n';
+                    }
+                    if (routeData.estimatedTime !== undefined) {
+                        var time = parseFloat(routeData.estimatedTime);
+                        message += 'Estimated time: ' + time.toFixed(2) + ' minutes';
+                    }
+
+                    if (message) {
+                        alert(message);
+                    } else {
+                        alert('Route calculated, but no distance or time information available.');
+                    }
                 })
                 .catch(error => {
                     console.error('Error fetching route:', error);

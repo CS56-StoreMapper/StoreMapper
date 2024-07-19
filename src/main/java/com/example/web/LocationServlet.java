@@ -197,12 +197,17 @@ public class LocationServlet extends HttpServlet {
                 return;
             }
 
+            double distanceKm = route.getTotalDistance();
+            double estimatedTimeMinutes = route.getEstimatedTime(routeType.equals(routeType));
+
             Map<String, Object> routeData = new HashMap<>();
             routeData.put("coordinates", route.getNodes().stream()
                                             .map(node -> Map.of("latitude", node.lat(), "longitude", node.lon()))
                                             .toList());
-            routeData.put("distance", String.format("%.2f", route.getTotalDistance())); // Convert to km and format
-            routeData.put("estimatedTime", Math.round(route.getEstimatedTime("fastest".equals(routeType)))); // Use the new getEstimatedTime method
+            routeData.put("distance", String.format("%.2f", distanceKm)); // Convert to km and format
+            logger.info("Distance: " + distanceKm);
+            routeData.put("estimatedTime", String.format("%.2f", estimatedTimeMinutes));
+            logger.info("Estimated time: " + estimatedTimeMinutes + " minutes");
 
             sendJsonResponse(response, routeData);
         } catch (NumberFormatException e) {
