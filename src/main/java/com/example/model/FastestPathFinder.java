@@ -56,7 +56,7 @@ public class FastestPathFinder {
 
     private int estimateSpeedLimit(Way way) {
         Map<String, String> tags = way.getTags();
-        logger.info("Estimating speed limit for way " + way.id() + " with tags: " + tags);
+        // logger.info("Estimating speed limit for way " + way.id() + " with tags: " + tags);
 
         if (tags.containsKey("maxspeed_mph")) {
             Object maxSpeed = tags.get("maxspeed_mph");

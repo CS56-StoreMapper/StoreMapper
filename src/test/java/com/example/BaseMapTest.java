@@ -83,7 +83,7 @@ public abstract class BaseMapTest {
         logger.info("Calling findNearestLocation with coordinates: " + testPoint);
         Optional<Location> nearestLocation = mapService.findNearestLocation(testPoint, null);
         logger.info("Nearest location: " + nearestLocation);
-        logger.info("setUp method completed");
+        // logger.info("setUp method completed");
 
     }
 
