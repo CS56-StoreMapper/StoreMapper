@@ -204,8 +204,12 @@ public class LocationServlet extends HttpServlet {
             routeData.put("coordinates", route.getNodes().stream()
                                             .map(node -> Map.of("latitude", node.lat(), "longitude", node.lon()))
                                             .toList());
+            // Add the new segments data with speed limits
+            routeData.put("routeSegments", route.getRouteSegments());
+            
             routeData.put("distance", String.format("%.2f", distanceKm)); // Convert to km and format
             logger.info("Distance: " + distanceKm);
+            
             routeData.put("estimatedTime", String.format("%.2f", estimatedTimeMinutes));
             logger.info("Estimated time: " + estimatedTimeMinutes + " minutes");
 

@@ -3,6 +3,8 @@ package com.example.model;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Represents a route between two nodes.
@@ -61,6 +63,29 @@ public class Route {
             distance += nodes.get(i).toCoordinates().distanceTo(nodes.get(i + 1).toCoordinates());
         }
         return distance;
+    }
+
+    public List<Map<String, Object>> getRouteSegments() {
+        List<Map<String, Object>> segments = new ArrayList<>();
+        List<Node> nodes = getNodes();
+        for (int i = 0; i < nodes.size() - 1; i++) {
+            Node start = nodes.get(i);
+            Node end = nodes.get(i + 1);
+            Way way = graph.getWay(start, end);
+            double distance = start.toCoordinates().distanceTo(end.toCoordinates());
+            int speedLimitMph = way.getSpeedLimitMph();
+            
+            Map<String, Object> segment = new HashMap<>();
+            segment.put("startLat", start.lat());
+            segment.put("startLon", start.lon());
+            segment.put("endLat", end.lat());
+            segment.put("endLon", end.lon());
+            segment.put("distance", distance);
+            segment.put("speedLimit", speedLimitMph);
+            
+            segments.add(segment);
+        }
+        return segments;
     }
 
     public double estimateTravelTime(double averageSpeedKmh) {
