@@ -48,9 +48,9 @@
 - Update JavaDocs for modified classes
 - Create overall architecture documentation explaining OSM integration
 
-## 11. Performance Optimization 🔄 In Progress
-- Implemented basic spatial indexing for nearest-node queries
+## 11. Performance Optimization 🔲 To Be Considered
 - TODO:
+  - Implement basic spatial indexing for nearest-node queries
   - Implement more robust spatial indexing (e.g., k-d tree or quadtree)
   - Profile and optimize Graph operations
 
