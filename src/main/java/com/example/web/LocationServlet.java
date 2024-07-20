@@ -27,6 +27,7 @@ import com.example.model.Node;
 import com.example.service.MapService;
 import com.example.util.OSMDataLoader;
 import com.example.util.TypeLoader;
+import com.example.util.DistanceUtil;
 
 @WebServlet(name = "LocationServlet", urlPatterns = {"/", "/locations", "/route", "/nearest", "/within-radius", "/search"})
 public class LocationServlet extends HttpServlet {
@@ -205,10 +206,12 @@ public class LocationServlet extends HttpServlet {
                                             .map(node -> Map.of("latitude", node.lat(), "longitude", node.lon()))
                                             .toList());
             // Add the new segments data with speed limits
-            routeData.put("routeSegments", route.getRouteSegments());
+            routeData.put("segments", route.getRouteSegments());
+            // logger.info("Route segments: " + routeData.get("segments"));
             
-            routeData.put("distance", String.format("%.2f", distanceKm)); // Convert to km and format
-            logger.info("Distance: " + distanceKm);
+            double distanceMiles = DistanceUtil.kmToMiles(distanceKm);
+            routeData.put("distance", String.format("%.2f", distanceMiles)); // Convert to km and format
+            logger.info("Distance: " + distanceMiles + " miles");
             
             routeData.put("estimatedTime", String.format("%.2f", estimatedTimeMinutes));
             logger.info("Estimated time: " + estimatedTimeMinutes + " minutes");

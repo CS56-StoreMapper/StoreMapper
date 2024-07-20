@@ -76,6 +76,40 @@
         #results div:hover {
             background-color: #f0f0f0;
         }
+        #legend {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            z-index: 1000;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+        }
+        #legend h4 {
+            margin: 0 0 5px 0;
+            font-size: 14px;
+        }
+        
+        .legend-item {
+            margin-bottom: 3px;
+            font-size: 12px;
+        }
+        
+        .legend-color {
+            display: inline-block;
+            width: 15px;
+            height: 8px;
+            margin-right: 5px;
+        }
+        
+        .leaflet-interactive.route-line {
+            stroke: black;
+            stroke-width: 1;
+            stroke-opacity: 1;
+        } 
+        
     </style>
 </head>
 <body>
@@ -100,6 +134,47 @@
         var currentRoute = null; 
         var map = L.map('map', { scrollWheelZoom: false }).setView([34.0522, -118.2437], 10);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        // Create a custom control for the legend
+        var legendControl = L.control({position: 'topright'});
+
+        legendControl.onAdd = function (map) {
+            var div = L.DomUtil.create('div', 'info legend');
+            div.innerHTML = `
+                <h4>Speed Limits</h4>
+                <div class="legend-item"><span class="legend-color" style="background-color: red;"></span> ≤ 25 mph</div>
+                <div class="legend-item"><span class="legend-color" style="background-color: #FF8C00;"></span> 26-35 mph</div>
+                <div class="legend-item"><span class="legend-color" style="background-color: #FFD700;"></span> 36-45 mph</div>
+                <div class="legend-item"><span class="legend-color" style="background-color: green;"></span> > 45 mph</div>
+            `;
+            return div;
+        };
+        // Update the CSS for the legend
+        var style = document.createElement('style');
+        style.textContent = `
+            .legend {
+                background: white;
+                padding: 10px;
+                border-radius: 5px;
+                border: 1px solid #ccc;
+                box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+            }
+            .legend h4 {
+                margin: 0 0 5px 0;
+                font-size: 14px;
+            }
+            .legend-item {
+                margin-bottom: 3px;
+                font-size: 12px;
+            }
+            .legend-color {
+                display: inline-block;
+                width: 15px;
+                height: 8px;
+                margin-right: 5px;
+            }
+        `;
+        document.head.appendChild(style);
 
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
@@ -267,10 +342,6 @@
         }
 
         function createRoute(start, end, routeType) {
-            if (currentRoute) {
-                map.removeLayer(currentRoute);
-            }
-
             console.log("Start:", start, "End:", end, "Route Type:", routeType);
 
             const startLat = start.lat;
@@ -288,27 +359,38 @@
                 })
                 .then(routeData => {
                     console.log("Route data received:", JSON.stringify(routeData, null, 2));
-                    currentRoute = L.polyline(
-                        routeData.coordinates.map(({latitude, longitude}) => [latitude, longitude]),
-                        {color: 'blue', opacity: 0.6, weight: 4}
-                    ).addTo(map);
-                    map.fitBounds(currentRoute.getBounds());
 
-                    var message = '';
-                    if (routeData.distance !== undefined) {
-                        var distance = parseFloat(routeData.distance);
-                        message += 'Distance: ' + distance.toFixed(2) + ' km\n';
-                    }
-                    if (routeData.estimatedTime !== undefined) {
-                        var time = parseFloat(routeData.estimatedTime);
-                        message += 'Estimated time: ' + time.toFixed(2) + ' minutes';
+                    if (currentRoute) {
+                        map.removeLayer(currentRoute);
                     }
 
-                    if (message) {
-                        alert(message);
+                    if (routeData.segments && routeData.segments.length > 0) {
+                        currentRoute = L.featureGroup().addTo(map);
+        
+                        routeData.segments.forEach(segment => {
+                            var coordinates = [
+                                [segment.startLat, segment.startLon],
+                                [segment.endLat, segment.endLon]
+                            ];
+                            var color = getColorForSpeedLimit(segment.speedLimit);
+                            createRouteSegment(coordinates, color);
+                        });
+                    } else if (routeData.coordinates && routeData.coordinates.length > 0) {
+                        currentRoute = L.polyline(routeData.coordinates.map(coord => [coord.latitude, coord.longitude]), {
+                            color: 'blue',
+                            opacity: 0.8,
+                            weight: 5
+                        }).addTo(map);
                     } else {
-                        alert('Route calculated, but no distance or time information available.');
+                        throw new Error("No valid route data found");
                     }
+
+                    // Fit the map to the bounds of the route
+                    map.fitBounds(currentRoute.getBounds());
+                     // Show the legend when a route is created
+                    legendControl.addTo(map);
+
+                    displayRouteInfo(routeData);
                 })
                 .catch(error => {
                     console.error('Error fetching route:', error);
@@ -316,11 +398,56 @@
                 });
         }
 
+        function createRouteSegment(coordinates, color) {
+             // Create the black "stroke" polyline
+            L.polyline(coordinates, {
+                color: 'black',
+                weight: 7,  // Slightly thicker than the colored line
+                opacity: 0.1,  // Reduced opacity to make it less prominent
+                lineJoin: 'round',
+                lineCap: 'round'
+            }).addTo(currentRoute);
+            // Create the colored polyline on top
+            L.polyline(coordinates, {
+              color: color,
+              weight: 6,
+              opacity: 1,
+              lineJoin: 'round',
+              lineCap: 'round'
+            }).addTo(currentRoute);
+          }
+
+        function displayRouteInfo(routeData) {
+            let message = '';
+            if (routeData.distance !== undefined) {
+                let distance = parseFloat(routeData.distance);
+                message += 'Distance: ' + distance.toFixed(2) + ' miles\n';
+            }
+            if (routeData.estimatedTime !== undefined) {
+                let time = parseFloat(routeData.estimatedTime);
+                message += 'Estimated time: ' + time.toFixed(2) + ' minutes';
+            }
+        
+            if (message) {
+                alert(message);
+            } else {
+                alert('Route calculated, but no distance or time information available.');
+            }
+        }
+
+        function getColorForSpeedLimit(speedLimit) {
+            if (speedLimit <= 25) return 'red';
+            if (speedLimit <= 35) return '#FF8C00';
+            if (speedLimit <= 45) return '#FFD700';
+            return 'green';
+        }
+
         function clearRoute() {
             if (currentRoute) {
                 map.removeLayer(currentRoute);
                 currentRoute = null;
             }
+            map.removeControl(legendControl);
         }
     </script>
 </body>
