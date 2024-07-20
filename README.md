@@ -2,7 +2,7 @@
 
 StoreMapper is a web application for locating and retrieving information about various types of locations, including stores and restaurants. It allows users to search for locations, view details, find the nearest location, and get routes to desired destinations.
 
-![`docs/images/screenshots/StoreMapper_UI.png`](docs/images/screenshots/StoreMapper_UI.png)
+![`docs/images/screenshots/StoreMapper_UI_v2.png`](docs/images/screenshots/StoreMapper_UI_v2.png)
 
 ## Features
 

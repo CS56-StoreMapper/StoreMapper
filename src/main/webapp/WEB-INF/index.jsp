@@ -145,7 +145,7 @@
                 <div class="legend-item"><span class="legend-color" style="background-color: red;"></span> ≤ 25 mph</div>
                 <div class="legend-item"><span class="legend-color" style="background-color: #FF8C00;"></span> 26-35 mph</div>
                 <div class="legend-item"><span class="legend-color" style="background-color: #FFD700;"></span> 36-45 mph</div>
-                <div class="legend-item"><span class="legend-color" style="background-color: green;"></span> > 45 mph</div>
+                <div class="legend-item"><span class="legend-color" style="background-color: #30AC45;"></span> > 45 mph</div>
             `;
             return div;
         };
@@ -296,6 +296,12 @@
                 });
         }
 
+        document.getElementById('search-input').addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                performSearch();
+            }
+        });
+
         function createPopupContent(location) {
             var content = '<strong>' + (location.osmNode.tags.name || 'Unnamed Location') + '</strong><br>';
             content += 'Latitude: ' + location.coordinates.latitude.toFixed(6) + '<br>';
@@ -316,10 +322,16 @@
         }
         
         function createListItemContent(location) {
-            var content = location.osmNode.tags.name || 'Unnamed Location';
+            var content = decodeHTMLEntities(location.osmNode.tags.name) || 'Unnamed Location';
             if (location.cuisineType) content += ' - Cuisine: ' + location.cuisineType;
             if (location.shopType) content += ' - Shop Type: ' + location.shopType;
             return content;
+        }
+
+        function decodeHTMLEntities(text) {
+            var textArea = document.createElement('textarea');
+            textArea.innerHTML = text;
+            return textArea.value;
         }
 
         function routeToLocation(lat, lon, locationId) {
@@ -437,9 +449,9 @@
 
         function getColorForSpeedLimit(speedLimit) {
             if (speedLimit <= 25) return 'red';
-            if (speedLimit <= 35) return '#FF8C00';
-            if (speedLimit <= 45) return '#FFD700';
-            return 'green';
+            if (speedLimit <= 35) return '#FF8C00'; // Dark Orange
+            if (speedLimit <= 45) return '#FFD700'; // Gold
+            return '#30AC45'; // Green
         }
 
         function clearRoute() {
