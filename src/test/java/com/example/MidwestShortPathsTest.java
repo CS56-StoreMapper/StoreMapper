@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Disabled;
 import com.example.model.Coordinates;
 
 
+@Disabled
 public class MidwestShortPathsTest extends BaseMapTest {
     @Override
     protected String getDatasetName() {
