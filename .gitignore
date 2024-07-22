@@ -7,6 +7,10 @@ tmp/                        # Temporary files
 apache-tomcat-10.1.25/      # Tomcat server files
 .idea/                      # IntelliJ IDEA settings
 
+
+# But don't ignore the .gitkeep file
+!data/.gitkeep
+
 # macOS system files
 .DS_Store
 

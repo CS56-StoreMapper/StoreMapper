@@ -174,6 +174,11 @@
                 margin-right: 5px;
             }
         `;
+
+        
+
+
+
         document.head.appendChild(style);
 
         if (navigator.geolocation) {

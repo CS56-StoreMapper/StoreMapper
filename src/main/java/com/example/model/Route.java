@@ -9,23 +9,42 @@ import com.example.util.DistanceUtil;
 import java.util.HashMap;
 
 /**
- * Represents a route between two nodes.
+ * Represents a route between two nodes in the StoreMapper application.
+ * This class encapsulates the concept of a path through the road network,
+ * including methods for distance calculation, travel time estimation,
+ * and route segment information.
  */
 public class Route {
     private final List<Node> nodes;
     private double totalDistance;
     private Graph graph;
 
+    /**
+     * Constructs a new Route object.
+     *
+     * @param nodes The list of nodes that make up the route.
+     * @param graph The graph representing the road network.
+     */
     public Route(List<Node> nodes, Graph graph) {
         this.nodes = nodes;
         this.graph = graph;
         this.totalDistance = calculateTotalDistance();
     }
 
+    /**
+     * Retrieves the list of nodes that make up this route.
+     *
+     * @return A list of Node objects representing the route.
+     */
     public List<Node> getNodes() {
         return nodes;
     }
 
+    /**
+     * Converts the route's nodes to a list of coordinates.
+     *
+     * @return A list of Coordinates objects representing the route's path.
+     */
     public List<Coordinates> getCoordinates() {
         return nodes.stream()
                     .map(Node::toCoordinates)
@@ -41,6 +60,12 @@ public class Route {
         return totalDistance;
     }
 
+     /**
+     * Estimates the travel time for the route.
+     *
+     * @param fastest If true, calculates time based on speed limits; otherwise, uses a constant speed.
+     * @return The estimated travel time in minutes.
+     */
     public double getEstimatedTime(boolean fastest) {
         double totalDistanceKm = 0;
         double totalTimeHours = 0;
@@ -56,8 +81,8 @@ public class Route {
             totalTimeHours += segmentTimeHours;
             totalDistanceKm += distanceKm;
             
-            System.out.printf("Segment %d: Distance = %.2f km, Speed = %d mph, Time = %.2f minutes%n", 
-                i, distanceKm, speedLimitMph, segmentTimeHours * 60);
+            // System.out.printf("Segment %d: Distance = %.2f km, Speed = %d mph, Time = %.2f minutes%n", 
+            //     i, distanceKm, speedLimitMph, segmentTimeHours * 60);
         }
         double distanceMiles = DistanceUtil.kmToMiles(totalDistanceKm);
         System.out.printf("Total distance: %.2f miles%n", distanceMiles);
