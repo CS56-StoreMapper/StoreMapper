@@ -1,7 +1,9 @@
 package com.example;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Disabled;
 import com.example.model.Coordinates;
+
 
 public class MidwestShortPathsTest extends BaseMapTest {
     @Override

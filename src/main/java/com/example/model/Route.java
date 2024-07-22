@@ -2,7 +2,11 @@ package com.example.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
+
+import com.example.util.DistanceUtil;
+
+import java.util.HashMap;
 
 /**
  * Represents a route between two nodes.
@@ -38,20 +42,27 @@ public class Route {
     }
 
     public double getEstimatedTime(boolean fastest) {
+        double totalDistanceKm = 0;
         double totalTimeHours = 0;
         List<Node> nodes = getNodes();
+
         for (int i = 0; i < nodes.size() - 1; i++) {
             Node start = nodes.get(i);
             Node end = nodes.get(i + 1);
             Way way = graph.getWay(start, end);
-            double distance = start.toCoordinates().distanceTo(end.toCoordinates());
+            double distanceKm = start.toCoordinates().distanceTo(end.toCoordinates());
             int speedLimitMph = way.getSpeedLimitMph();
-            double segmentTimeHours = distance / (speedLimitMph * 1609.34 / 3600);
+            double segmentTimeHours = distanceKm / speedLimitMph;
             totalTimeHours += segmentTimeHours;
+            totalDistanceKm += distanceKm;
             
-            System.out.println("Segment " + i + ": Distance = " + distance + "m, Speed = " + speedLimitMph + "mph, Time = " + (segmentTimeHours * 60) + " minutes");
+            System.out.printf("Segment %d: Distance = %.2f km, Speed = %d mph, Time = %.2f minutes%n", 
+                i, distanceKm, speedLimitMph, segmentTimeHours * 60);
         }
-        System.out.println("Total estimated time: " + (totalTimeHours * 60) + " minutes");
+        double distanceMiles = DistanceUtil.kmToMiles(totalDistanceKm);
+        System.out.printf("Total distance: %.2f miles%n", distanceMiles);
+        System.out.printf("Average speed: %.2f mph%n", distanceMiles / totalTimeHours);
+        System.out.printf("Total estimated time: %.2f minutes%n", totalTimeHours * 60);
         return totalTimeHours * 60; // Convert hours to minutes
     }
 
@@ -61,6 +72,29 @@ public class Route {
             distance += nodes.get(i).toCoordinates().distanceTo(nodes.get(i + 1).toCoordinates());
         }
         return distance;
+    }
+
+    public List<Map<String, Object>> getRouteSegments() {
+        List<Map<String, Object>> segments = new ArrayList<>();
+        List<Node> nodes = getNodes();
+        for (int i = 0; i < nodes.size() - 1; i++) {
+            Node start = nodes.get(i);
+            Node end = nodes.get(i + 1);
+            Way way = graph.getWay(start, end);
+            double distance = start.toCoordinates().distanceTo(end.toCoordinates());
+            int speedLimitMph = way.getSpeedLimitMph();
+            
+            Map<String, Object> segment = new HashMap<>();
+            segment.put("startLat", start.lat());
+            segment.put("startLon", start.lon());
+            segment.put("endLat", end.lat());
+            segment.put("endLon", end.lon());
+            segment.put("distance", distance);
+            segment.put("speedLimit", speedLimitMph);
+            
+            segments.add(segment);
+        }
+        return segments;
     }
 
     public double estimateTravelTime(double averageSpeedKmh) {
