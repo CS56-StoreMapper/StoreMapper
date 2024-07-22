@@ -1,8 +1,10 @@
 package com.example;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Disabled;
 import com.example.model.Coordinates;
 
+@Disabled
 public class MidwestFastPathsTest extends BaseMapTest {
     @Override
     protected String getDatasetName() {

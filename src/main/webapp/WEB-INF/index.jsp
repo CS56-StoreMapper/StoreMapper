@@ -174,6 +174,47 @@
                 margin-right: 5px;
             }
         `;
+
+        // Create a custom control for the route information
+        var routeInfoControl = L.control({position: 'bottomright'});
+
+        routeInfoControl.onAdd = function (map) {
+            this._div = L.DomUtil.create('div', 'info route-info');
+            this.update();
+            return this._div;
+        };
+
+        routeInfoControl.update = function (props) {
+            console.log("Route information: ", props);
+            if (props) {
+                this.lastValidProps = props;
+            }
+            this._div.innerHTML = '<h4>Route Information</h4>' + (this.lastValidProps ?
+                '<b>Distance:</b> ' + this.lastValidProps.distance + ' miles<br />' +
+                '<b>Estimated Time:</b> ' + this.lastValidProps.time + ' minutes'
+                : 'No route selected');
+        };
+
+        // Update the CSS for both controls
+        style.textContent += `
+            .info {
+                background: white;
+                padding: 10px;
+                border-radius: 5px;
+                border: 1px solid #ccc;
+                box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+            }
+            .info h4 {
+                margin: 0 0 5px 0;
+                font-size: 14px;
+            }
+            .route-info {
+                margin-top: 10px;
+            }
+        `;
+
+
+
         document.head.appendChild(style);
 
         if (navigator.geolocation) {
@@ -370,7 +411,7 @@
                     return response.json();
                 })
                 .then(routeData => {
-                    console.log("Route data received:", JSON.stringify(routeData, null, 2));
+                    // console.log("Route data received:", JSON.stringify(routeData, null, 2));
 
                     if (currentRoute) {
                         map.removeLayer(currentRoute);
@@ -378,6 +419,7 @@
 
                     if (routeData.segments && routeData.segments.length > 0) {
                         currentRoute = L.featureGroup().addTo(map);
+                        routeInfoControl.addTo(map);
         
                         routeData.segments.forEach(segment => {
                             var coordinates = [
@@ -397,12 +439,14 @@
                         throw new Error("No valid route data found");
                     }
 
-                    // Fit the map to the bounds of the route
-                    map.fitBounds(currentRoute.getBounds());
-                     // Show the legend when a route is created
+                    
+                    // Show the legend when a route is created
                     legendControl.addTo(map);
 
                     displayRouteInfo(routeData);
+
+                    // Fit the map to the bounds of the route
+                    map.fitBounds(currentRoute.getBounds());
                 })
                 .catch(error => {
                     console.error('Error fetching route:', error);
@@ -429,21 +473,22 @@
             }).addTo(currentRoute);
           }
 
-        function displayRouteInfo(routeData) {
-            let message = '';
-            if (routeData.distance !== undefined) {
-                let distance = parseFloat(routeData.distance);
-                message += 'Distance: ' + distance.toFixed(2) + ' miles\n';
-            }
-            if (routeData.estimatedTime !== undefined) {
-                let time = parseFloat(routeData.estimatedTime);
-                message += 'Estimated time: ' + time.toFixed(2) + ' minutes';
-            }
+          function displayRouteInfo(routeData) {
+            console.log("Route distance: " + routeData.distance);
+            console.log("Route estimated time: " + routeData.estimatedTime);
+            let distance = routeData.distance !== undefined ? parseFloat(routeData.distance).toFixed(2) : 'N/A';
+            let time = routeData.estimatedTime !== undefined ? parseFloat(routeData.estimatedTime).toFixed(2) : 'N/A';
+            
+            if (distance !== 'N/A' || time !== 'N/A') {
+                routeInfoControl.update({
+                    distance: distance,
+                    time: time
+                });
+            } 
         
-            if (message) {
-                alert(message);
-            } else {
-                alert('Route calculated, but no distance or time information available.');
+            // Add the control to the map if it hasn't been added yet
+            if (!map.hasLayer(routeInfoControl)) {
+                routeInfoControl.addTo(map);
             }
         }
 
@@ -460,6 +505,7 @@
                 currentRoute = null;
             }
             map.removeControl(legendControl);
+            map.removeControl(routeInfoControl);
         }
     </script>
 </body>
