@@ -57,13 +57,7 @@
 1. Server: apache-tomcat-10.1.24 at localhost
 2. Start URL: http://localhost:8081/
 
-## Additional Notes
-- Ensure Tomcat 10.1.24 is compatible with your local setup
-- Clean and republish the server after making configuration changes
-- If issues persist, try deploying as ROOT.war in Tomcat's webapps directory
-
-
-# Step-by-Step Eclipse UI Configuration for StoreMapper
+## Step-by-Step Eclipse UI Configuration for StoreMapper
 
 1. Open Eclipse and select your workspace.
 
@@ -130,3 +124,40 @@
 13. Test the setup:
     - Start the server
     - Open a browser and navigate to http://localhost:8081/
+
+## Troubleshooting
+
+If you encounter build path errors or issues with Java release 21, try the following:
+
+1. Ensure JDK 21 is installed on your system.
+
+2. Configure Eclipse to use JDK 21:
+   - Window > Preferences > Java > Installed JREs
+   - Add JDK 21 if not listed and set as default
+
+3. Update Maven configuration:
+   - Right-click project > Properties > Maven
+   - Check "Resolve dependencies from Workspace projects"
+
+4. Clean and update the project:
+   - Right-click project > Maven > Update Project
+   - Check "Force Update of Snapshots/Releases"
+   - Click OK
+
+5. Rebuild the project:
+   - Project > Clean... > Clean all projects
+
+6. Verify Eclipse version:
+   - Ensure you're using Eclipse version 2023-09 (4.29) or later
+
+7. Check Tomcat configuration:
+   - Verify Tomcat 10.1.24 is properly set up in Eclipse
+
+8. Maven installation:
+   - Verify Maven is correctly installed and configured in Eclipse
+   - Try running `mvn clean install` from the command line in the project directory
+
+## Additional Notes
+- Ensure Tomcat 10.1.24 is compatible with your local setup
+- Clean and republish the server after making configuration changes
+- If issues persist, try deploying as ROOT.war in Tomcat's webapps directory
