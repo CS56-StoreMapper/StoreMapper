@@ -28,6 +28,7 @@ import com.example.service.MapService;
 import com.example.util.OSMDataLoader;
 import com.example.util.TypeLoader;
 import com.example.util.DistanceUtil;
+import com.example.util.MemoryUtil;
 
 @WebServlet(name = "LocationServlet", urlPatterns = {"/", "/locations", "/route", "/nearest", "/within-radius", "/search"})
 public class LocationServlet extends HttpServlet {
@@ -82,7 +83,8 @@ public class LocationServlet extends HttpServlet {
             logger.info("LocationService created");
 
             mapService = new MapService(locationService, graph);
-            logger.info("MapService created");
+            logger.info("MapService created");  
+            logger.info("Memory usage after servlet initialization: " + MemoryUtil.getMemoryUsage());
         } catch (Exception e) {
             logger.severe("Error initializing LocationServlet: " + e.getMessage());
             throw new ServletException("Error initializing LocationServlet", e);
@@ -91,6 +93,8 @@ public class LocationServlet extends HttpServlet {
         // mapService = new MapService(locationService, locationService.getGraph());
         logger.info("LocationServlet initialized with " + locationService.getAllLocations().size() + " locations");
     }
+
+
 
     private List<Node> loadNodesFromResource(String resourcePath) throws IOException {
         try (InputStream is = getClass().getResourceAsStream(resourcePath)) {

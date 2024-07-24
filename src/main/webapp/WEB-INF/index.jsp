@@ -123,6 +123,7 @@
         </select>
         <select id="type-select"></select>
         <input type="text" id="search-input" placeholder="Search...">
+        <button id="set-location-btn">Set Location</button>
         <input type="number" id="radius-input" placeholder="Radius (km)" value="20">
         <button onclick="performSearch()">Search</button>
         <button onclick="clearRoute()">Clear Route</button>
@@ -132,8 +133,20 @@
 
     <script>
         var currentRoute = null; 
-        var map = L.map('map', { scrollWheelZoom: false }).setView([34.0522, -118.2437], 10);
+        var map = L.map('map', { scrollWheelZoom: false });
+        var startingMarker;
+        var isSettingStartPoint = false;
+
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        // Define the bounds
+        var bounds = L.latLngBounds(
+            [33.965, -118.5129999], // Southwest corner
+            [34.07, -118.3849999]   // Northeast corner
+        );
+
+        // Fit the map to these bounds
+        map.fitBounds(bounds, {maxZoom: 12});
 
         // Create a custom control for the legend
         var legendControl = L.control({position: 'topright'});
@@ -217,23 +230,12 @@
 
         document.head.appendChild(style);
 
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                function(position) {
-                    var userLocation = L.latLng(position.coords.latitude, position.coords.longitude);
-                    map.setView(userLocation, 13);
-                    L.marker(userLocation).addTo(map).bindPopup("You are here").openPopup();
-                },
-                function(error) {
-                    console.error("Error getting current location:", error);
-                }
-            );
-        }
-
         // Enable scroll wheel zoom when the map is clicked or touched
         map.on('focus', function() { map.scrollWheelZoom.enable(); });
         // Disable scroll wheel zoom when the map loses focus
         map.on('blur', function() { map.scrollWheelZoom.disable(); });
+
+        
 
         var cuisineTypes = ${cuisineTypesJson};
         var shopTypes = ${shopTypesJson};
@@ -259,6 +261,83 @@
             option.textContent = type;
             document.getElementById('type-select').appendChild(option);
         }
+
+        function addCustomButton(map) {
+            var customControl = L.Control.extend({
+                options: {
+                    position: 'topright'
+                },
+                onAdd: function (map) {
+                    var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+                    var button = L.DomUtil.create('a', 'leaflet-control-custom', container);
+                    button.innerHTML = '📍'; // Pin emoji as button text
+                    button.title = 'Set Starting Point';
+                    button.href = '#';
+                    button.style.width = '30px';
+                    button.style.height = '30px';
+                    button.style.lineHeight = '30px';
+                    button.style.fontSize = '20px';
+                    button.style.textAlign = 'center';
+                    button.style.backgroundColor = 'white';
+                    button.style.color = 'black';
+                    
+                    L.DomEvent.on(button, 'click', function(e) {
+                        L.DomEvent.stopPropagation(e);
+                        toggleSetStartPointMode();
+                    });
+                    
+                    return container;
+                }
+            });
+            map.addControl(new customControl());
+        }
+
+        function toggleSetStartPointMode() {
+            isSettingStartPoint = !isSettingStartPoint;
+            console.log("Setting starting point mode:", isSettingStartPoint);
+            if (isSettingStartPoint) {
+                alert('Click on the map to set the starting point');
+            } else {
+                alert('Starting point mode disabled');
+            }
+        }
+
+        function setStartingLocation(latlng) {
+            console.log("Setting starting location:", JSON.stringify(latlng));
+            if (!latlng || typeof latlng.lat !== 'number' || typeof latlng.lng !== 'number') {
+                console.error("Invalid latlng object provided to setStartingLocation");
+                return;
+            }
+
+            var latLng = L.latLng(latlng.lat, latlng.lng);
+
+            if (startingMarker) {
+                map.removeLayer(startingMarker);
+            }
+            startingMarker = L.marker(latLng, {
+                icon: L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                    shadowSize: [41, 41]
+                })
+            }).addTo(map);
+            startingMarker.bindPopup("Starting Location").openPopup();
+            console.log("New starting location set:", latLng);
+            isSettingStartPoint = false; // Turn off the mode after setting
+        }
+
+        // Modify the existing map click handler
+        map.on('click', function(e) {
+            console.log("Map clicked, isSettingStartPoint:", isSettingStartPoint);
+            if (isSettingStartPoint) {
+                setStartingLocation(e.latlng);
+            }
+        });
+
+        addCustomButton(map);
 
         document.getElementById('category-select').addEventListener('change', updateTypeOptions);
         updateTypeOptions();
@@ -289,7 +368,8 @@
                     
                     // Clear existing markers
                     map.eachLayer(layer => {
-                        if (layer instanceof L.Marker) {
+                        console.log("Layer:", getLayerInfo(layer));
+                        if (layer instanceof L.Marker && layer !== startingMarker) {
                             map.removeLayer(layer);
                         }
                     });
@@ -308,6 +388,11 @@
                         }
                     });
 
+                    // Include starting marker in bounds if it exists
+                    if (startingMarker) {
+                        bounds.extend(startingMarker.getLatLng());
+                    }
+
                     if (locations.length > 0) {
                         map.fitBounds(bounds);
                     } else {
@@ -316,20 +401,7 @@
                     }
 
                     // Update results list
-                    var resultsDiv = document.getElementById('results');
-                    resultsDiv.innerHTML = '';
-                    locations.forEach(location => {
-                        var listItem = document.createElement('div');
-                        listItem.textContent = createListItemContent(location);
-                        listItem.addEventListener('click', () => {
-                            map.setView([location.coordinates.latitude, location.coordinates.longitude], 16);
-                            L.popup()
-                                .setLatLng([location.coordinates.latitude, location.coordinates.longitude])
-                                .setContent(createPopupContent(location))
-                                .openOn(map);
-                        });
-                        resultsDiv.appendChild(listItem);
-                    });
+                    updateResultsList(locations);
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -337,11 +409,51 @@
                 });
         }
 
+        function getLayerInfo(layer) {
+            if (layer instanceof L.Marker) {
+                return {
+                    type: 'Marker',
+                    latLng: layer.getLatLng(),
+                    options: layer.options
+                };
+            } else if (layer instanceof L.TileLayer) {
+                return {
+                    type: 'TileLayer',
+                    options: layer.options
+                };
+            } else {
+                return {
+                    type: layer.constructor.name,
+                    options: layer.options
+                };
+            }
+        }
+        
+
+        function updateResultsList(locations) {
+            var resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+            locations.forEach(location => {
+                var listItem = document.createElement('div');
+                listItem.textContent = createListItemContent(location);
+                listItem.addEventListener('click', () => {
+                    map.setView([location.coordinates.latitude, location.coordinates.longitude], 16);
+                    L.popup()
+                        .setLatLng([location.coordinates.latitude, location.coordinates.longitude])
+                        .setContent(createPopupContent(location))
+                        .openOn(map);
+                });
+                resultsDiv.appendChild(listItem);
+            });
+        }
+
         document.getElementById('search-input').addEventListener('keyup', function(event) {
             if (event.key === 'Enter') {
                 performSearch();
             }
         });
+
+
 
         function createPopupContent(location) {
             var content = '<strong>' + (location.osmNode.tags.name || 'Unnamed Location') + '</strong><br>';
@@ -376,21 +488,14 @@
         }
 
         function routeToLocation(lat, lon, locationId) {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        var start = L.latLng(position.coords.latitude, position.coords.longitude);
-                        var end = L.latLng(lat, lon);
-                        var routeType = document.getElementById('popup-route-type-' + locationId).value;
-                        createRoute(start, end, routeType);
-                    },
-                    function(error) {
-                        console.error("Error getting current location:", error);
-                        alert("Unable to get your current location. Please ensure location services are enabled.");
-                    }
-                );
+            var routeType = document.getElementById('popup-route-type-' + locationId).value;
+            var end = L.latLng(lat, lon);
+            
+            if (startingMarker) {
+                var start = startingMarker.getLatLng();
+                createRoute(start, end, routeType);
             } else {
-                alert("Geolocation is not supported by this browser.");
+                alert("Please set a starting point first by clicking the '📍' button and then clicking on the map.");
             }
         }
 
@@ -446,7 +551,7 @@
                     displayRouteInfo(routeData);
 
                     // Fit the map to the bounds of the route
-                    map.fitBounds(currentRoute.getBounds());
+                    map.fitBounds(currentRoute.getBounds().pad(0.2));
                 })
                 .catch(error => {
                     console.error('Error fetching route:', error);
@@ -507,6 +612,16 @@
             map.removeControl(legendControl);
             map.removeControl(routeInfoControl);
         }
+
+        // Add this after all the function definitions and map initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            var setLocationBtn = document.getElementById('set-location-btn');
+            if (setLocationBtn) {
+                setLocationBtn.addEventListener('click', toggleSetStartPointMode);
+            } else {
+                console.error("Set Location button not found");
+            }
+        });
     </script>
 </body>
 </html>
