@@ -109,6 +109,16 @@
             stroke-width: 1;
             stroke-opacity: 1;
         } 
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+        }
+        
+        .pulsating {
+            animation: pulse 1s infinite;
+        }
         
     </style>
 </head>
@@ -123,9 +133,9 @@
         </select>
         <select id="type-select"></select>
         <input type="text" id="search-input" placeholder="Search...">
-        <button id="set-location-btn">Set Location</button>
         <input type="number" id="radius-input" placeholder="Radius (km)" value="20">
         <button onclick="performSearch()">Search</button>
+        <button id="set-location-btn">Set Location</button>
         <button onclick="clearRoute()">Clear Route</button>
     </div>
     <div id="map"></div>
@@ -136,6 +146,8 @@
         var map = L.map('map', { scrollWheelZoom: false });
         var startingMarker;
         var isSettingStartPoint = false;
+        var setLocationBtn;
+
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
@@ -294,10 +306,14 @@
 
         function toggleSetStartPointMode() {
             isSettingStartPoint = !isSettingStartPoint;
-            console.log("Setting starting point mode:", isSettingStartPoint);
+            console.log("Setting starting point mode:", isSettingStartPoint);            
             if (isSettingStartPoint) {
+                map.getContainer().style.cursor = 'crosshair';
+                setLocationBtn.classList.add('pulsating');
                 alert('Click on the map to set the starting point');
             } else {
+                map.getContainer().style.cursor = '';
+                setLocationBtn.classList.remove('pulsating');
                 alert('Starting point mode disabled');
             }
         }
@@ -327,6 +343,9 @@
             startingMarker.bindPopup("Starting Location").openPopup();
             console.log("New starting location set:", latLng);
             isSettingStartPoint = false; // Turn off the mode after setting
+            // cursor back to default
+            map.getContainer().style.cursor = '';
+            setLocationBtn.classList.remove('pulsating');
         }
 
         // Modify the existing map click handler
@@ -611,6 +630,11 @@
             }
             map.removeControl(legendControl);
             map.removeControl(routeInfoControl);
+        }
+
+        function initializeMap() {
+            map = L.map('map').setView([40.712, -74.006], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         }
 
         // Add this after all the function definitions and map initialization
