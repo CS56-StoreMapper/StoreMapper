@@ -120,18 +120,30 @@
             animation: pulse 1s infinite;
         }
         
+        
+        .info-banner {
+            padding: 6px 8px;
+            font: 14px/16px Arial, Helvetica, sans-serif;
+            background: white;
+            background: rgba(255,255,255,0.8);
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            border-radius: 5px;
+            max-width: 300px;
+        }
     </style>
 </head>
 <body>
     <h1>StoreMapper</h1>
     <div id="search-container">
         <select id="category-select">
-            <option value="">All Categories</option>
+            <option value="all">All Categories</option>
             <c:forEach var="category" items="${categories}">
                 <option value="${category}">${category}</option>
             </c:forEach>
         </select>
-        <select id="type-select"></select>
+        <select id="type-select">
+            <option value="all">All Types</option>
+        </select>
         <input type="text" id="search-input" placeholder="Search...">
         <input type="number" id="radius-input" placeholder="Radius (km)" value="20">
         <button onclick="performSearch()">Search</button>
@@ -149,6 +161,8 @@
         let isSettingStartPoint = false;
         let setLocationBtn;
         let markersLayer;
+        let banner;
+        let hasShownStartingPointMessage = false;
 
         const cuisineTypes = ${cuisineTypesJson};
         const shopTypes = ${shopTypesJson};
@@ -253,7 +267,50 @@
             document.getElementById('type-select').appendChild(option);
         }
 
+        L.Control.SetLocation = L.Control.extend({
+            onAdd: function(map) {
+                var btn = L.DomUtil.create('button', 'leaflet-bar leaflet-control leaflet-control-custom');
+                btn.innerHTML = '📍';
+                btn.style.fontSize = '20px';
+                btn.style.width = '30px';
+                btn.style.height = '30px';
+                btn.title = 'Set starting location';
+                
+                L.DomEvent.on(btn, 'click', function(e) {
+                    L.DomEvent.stopPropagation(e);
+                    toggleSetStartPointMode();
+                });
+                
+                return btn;
+            }
+        });
+
+        L.Control.Banner = L.Control.extend({
+            onAdd: function(map) {
+                this._div = L.DomUtil.create('div', 'info-banner');
+                this._div.style.display = 'none';
+                return this._div;
+            },
+        
+            show: function(message) {
+                this._div.innerHTML = message;
+                this._div.style.display = 'block';
+                setTimeout(() => {
+                    this._div.style.display = 'none';
+                }, 5000); // Hide after 5 seconds
+            }
+        });
+        
+        L.control.banner = function(opts) {
+            return new L.Control.Banner(opts);
+        }
+        
         function addCustomButton(map) {
+            new L.Control.SetLocation({ position: 'topleft' }).addTo(map);
+        }
+
+        // Legacy code
+        function addCustomButtonPrev(map) {
             var customControl = L.Control.extend({
                 options: {
                     position: 'topright'
@@ -288,12 +345,13 @@
             console.log("Setting starting point mode:", isSettingStartPoint);            
             if (isSettingStartPoint) {
                 map.getContainer().style.cursor = 'crosshair';
-                setLocationBtn.classList.add('pulsating');
-                alert('Click on the map to set the starting point');
+                // setLocationBtn.classList.add('pulsating');
+     
+                banner.show('Click on the map to set the starting point, or right-click anywhere to set it quickly.');
             } else {
                 map.getContainer().style.cursor = '';
-                setLocationBtn.classList.remove('pulsating');
-                alert('Starting point mode disabled');
+                // setLocationBtn.classList.remove('pulsating');
+                banner.show('Starting point mode disabled');
             }
         }
 
@@ -302,6 +360,11 @@
             if (!latlng || typeof latlng.lat !== 'number' || typeof latlng.lng !== 'number') {
                 console.error("Invalid latlng object provided to setStartingLocation");
                 return;
+            }
+
+            if (!hasShownStartingPointMessage) {
+                banner.show('Starting point set. You can also use the 📍 button and click on the map to set a starting point.');
+                hasShownStartingPointMessage = true;
             }
 
             var latLng = L.latLng(latlng.lat, latlng.lng);
@@ -332,6 +395,13 @@
             const type = document.getElementById('type-select').value;
             const searchTerm = document.getElementById('search-input').value;
             const radius = document.getElementById('radius-input').value;
+
+             // Check if the search is empty and no category or type is selected
+             if (!searchTerm && category === 'all' && type === 'all') {
+                banner.show('Please enter a search term or select a category/type before searching.');
+                return; // Exit the function early
+            }
+
             const center = map.getCenter();
 
             const url = '/search?category=' + encodeURIComponent(category) +
@@ -377,7 +447,7 @@
                         map.fitBounds(bounds);
                     } else {
                         console.log('No locations found');
-                        alert('No locations found for the given search criteria.');
+                        banner.show('No locations found for the given search criteria.');
                     }
 
                     // Update results list
@@ -385,7 +455,7 @@
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('An error occurred while searching. Please try again.');
+                    banner.show('An error occurred while searching. Please try again.');
                 });
         }
 
@@ -467,7 +537,7 @@
                 var start = startingMarker.getLatLng();
                 createRoute(start, end, routeType);
             } else {
-                alert("Please set a starting point first by clicking the '📍' button and then clicking on the map.");
+                banner.show("Please set a starting point first by right-clicking or by clicking the '📍' button and then clicking on the map.");
             }
         }
 
@@ -534,7 +604,7 @@
                 })
                 .catch(error => {
                     console.error('Error fetching route:', error);
-                    alert('Unable to calculate route. Please try again.');
+                    banner.show('Unable to calculate route. Please try again.');
                 });
         }
 
@@ -626,9 +696,15 @@
                 }
             });
 
-             // Set up right-click (context menu) event for setting starting point
+            banner = L.control.banner({ position: 'topright' }).addTo(map);
+
+            // Update the context menu event listener
             map.on('contextmenu', function(e) {
                 setStartingLocation(e.latlng);
+                if (!hasShownStartingPointMessage) {
+                    banner.show('Starting point set. You can also use the 📍 button and click on the map to set a starting point.');
+                    hasShownStartingPointMessage = true;
+                }
             });
 
             // Enable scroll wheel zoom when the map is clicked or touched
