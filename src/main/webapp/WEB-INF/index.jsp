@@ -143,22 +143,22 @@
 
     <script>
         var currentRoute = null; 
-        var map = L.map('map', { scrollWheelZoom: false });
+        // var map = L.map('map', { scrollWheelZoom: false });
         var startingMarker;
         var isSettingStartPoint = false;
         var setLocationBtn;
 
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        // L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
         // Define the bounds
-        var bounds = L.latLngBounds(
-            [33.965, -118.5129999], // Southwest corner
-            [34.07, -118.3849999]   // Northeast corner
-        );
+        // var bounds = L.latLngBounds(
+        //     [33.965, -118.5129999], // Southwest corner
+        //     [34.07, -118.3849999]   // Northeast corner
+        // );
 
         // Fit the map to these bounds
-        map.fitBounds(bounds, {maxZoom: 12});
+        // map.fitBounds(bounds, {maxZoom: 12});
 
         // Create a custom control for the legend
         var legendControl = L.control({position: 'topright'});
@@ -242,10 +242,7 @@
 
         document.head.appendChild(style);
 
-        // Enable scroll wheel zoom when the map is clicked or touched
-        map.on('focus', function() { map.scrollWheelZoom.enable(); });
-        // Disable scroll wheel zoom when the map loses focus
-        map.on('blur', function() { map.scrollWheelZoom.disable(); });
+        
 
         
 
@@ -349,17 +346,12 @@
         }
 
         // Modify the existing map click handler
-        map.on('click', function(e) {
-            console.log("Map clicked, isSettingStartPoint:", isSettingStartPoint);
-            if (isSettingStartPoint) {
-                setStartingLocation(e.latlng);
-            }
-        });
+        
 
-        addCustomButton(map);
+        // addCustomButton(map);
 
-        document.getElementById('category-select').addEventListener('change', updateTypeOptions);
-        updateTypeOptions();
+        // document.getElementById('category-select').addEventListener('change', updateTypeOptions);
+        // updateTypeOptions();
 
         function performSearch() {
             var category = document.getElementById('category-select').value;
@@ -466,11 +458,11 @@
             });
         }
 
-        document.getElementById('search-input').addEventListener('keyup', function(event) {
-            if (event.key === 'Enter') {
-                performSearch();
-            }
-        });
+        // document.getElementById('search-input').addEventListener('keyup', function(event) {
+        //     if (event.key === 'Enter') {
+        //         performSearch();
+        //     }
+        // });
 
 
 
@@ -633,18 +625,68 @@
         }
 
         function initializeMap() {
-            map = L.map('map').setView([40.712, -74.006], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            // Initialize the map with a default view of Santa Monica
+            map = L.map('map', {
+                center: [34.0195, -118.4912], // Santa Monica coordinates
+                zoom: 13,
+                maxBounds: L.latLngBounds(
+                    [33.965, -118.5129999], // Southwest corner
+                    [34.07, -118.3849999]   // Northeast corner
+                ),
+                maxZoom: 19,
+                minZoom: 12
+            });
+
+
+            // Add the OpenStreetMap tile layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+             // Add custom controls
+            addCustomButton(map);
+            legendControl.addTo(map);
+
+            // Set up click event for setting starting point
+            map.on('click', function(e) {
+                console.log("Map clicked, isSettingStartPoint:", isSettingStartPoint);
+                if (isSettingStartPoint) {
+                    setStartingLocation(e.latlng);
+                }
+            });
+
+             // Set up right-click (context menu) event for setting starting point
+            map.on('contextmenu', function(e) {
+                setStartingLocation(e.latlng);
+            });
+
+            // Enable scroll wheel zoom when the map is clicked or touched
+            map.on('focus', function() { map.scrollWheelZoom.enable(); });
+            // Disable scroll wheel zoom when the map loses focus
+            map.on('blur', function() { map.scrollWheelZoom.disable(); });
         }
 
         // Add this after all the function definitions and map initialization
         document.addEventListener('DOMContentLoaded', function() {
-            var setLocationBtn = document.getElementById('set-location-btn');
+            setLocationBtn = document.getElementById('set-location-btn');
             if (setLocationBtn) {
                 setLocationBtn.addEventListener('click', toggleSetStartPointMode);
             } else {
                 console.error("Set Location button not found");
             }
+
+            initializeMap();
+
+            // Set up other event listeners
+            document.getElementById('category-select').addEventListener('change', updateTypeOptions);
+            document.getElementById('search-input').addEventListener('keyup', function(event) {
+                if (event.key === 'Enter') {
+                    performSearch();
+                }
+            });
+
+            updateTypeOptions();
         });
     </script>
 </body>
