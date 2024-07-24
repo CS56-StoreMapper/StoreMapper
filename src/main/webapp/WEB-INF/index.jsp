@@ -142,26 +142,20 @@
     <div id="results"></div>
 
     <script>
-        var currentRoute = null; 
-        // var map = L.map('map', { scrollWheelZoom: false });
-        var startingMarker;
-        var isSettingStartPoint = false;
-        var setLocationBtn;
+        "use strict";
+        let currentRoute = null; 
+        let map;
+        let startingMarker;
+        let isSettingStartPoint = false;
+        let setLocationBtn;
+        let markersLayer;
 
-
-        // L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-        // Define the bounds
-        // var bounds = L.latLngBounds(
-        //     [33.965, -118.5129999], // Southwest corner
-        //     [34.07, -118.3849999]   // Northeast corner
-        // );
-
-        // Fit the map to these bounds
-        // map.fitBounds(bounds, {maxZoom: 12});
+        const cuisineTypes = ${cuisineTypesJson};
+        const shopTypes = ${shopTypesJson};
 
         // Create a custom control for the legend
         var legendControl = L.control({position: 'topright'});
+        var routeInfoControl = L.control({position: 'bottomright'});
 
         legendControl.onAdd = function (map) {
             var div = L.DomUtil.create('div', 'info legend');
@@ -200,9 +194,6 @@
             }
         `;
 
-        // Create a custom control for the route information
-        var routeInfoControl = L.control({position: 'bottomright'});
-
         routeInfoControl.onAdd = function (map) {
             this._div = L.DomUtil.create('div', 'info route-info');
             this.update();
@@ -238,16 +229,7 @@
             }
         `;
 
-
-
         document.head.appendChild(style);
-
-        
-
-        
-
-        var cuisineTypes = ${cuisineTypesJson};
-        var shopTypes = ${shopTypesJson};
 
         function updateTypeOptions() {
             var category = document.getElementById('category-select').value;
@@ -345,22 +327,14 @@
             setLocationBtn.classList.remove('pulsating');
         }
 
-        // Modify the existing map click handler
-        
-
-        // addCustomButton(map);
-
-        // document.getElementById('category-select').addEventListener('change', updateTypeOptions);
-        // updateTypeOptions();
-
         function performSearch() {
-            var category = document.getElementById('category-select').value;
-            var type = document.getElementById('type-select').value;
-            var searchTerm = document.getElementById('search-input').value;
-            var radius = document.getElementById('radius-input').value;
-            var center = map.getCenter();
+            const category = document.getElementById('category-select').value;
+            const type = document.getElementById('type-select').value;
+            const searchTerm = document.getElementById('search-input').value;
+            const radius = document.getElementById('radius-input').value;
+            const center = map.getCenter();
 
-            var url = '/search?category=' + encodeURIComponent(category) +
+            const url = '/search?category=' + encodeURIComponent(category) +
                       '&type=' + encodeURIComponent(type) +
                       '&name=' + encodeURIComponent(searchTerm) +
                       '&radius=' + encodeURIComponent(radius) +
@@ -378,12 +352,7 @@
                     console.log('Received data:', data);
                     
                     // Clear existing markers
-                    map.eachLayer(layer => {
-                        console.log("Layer:", getLayerInfo(layer));
-                        if (layer instanceof L.Marker && layer !== startingMarker) {
-                            map.removeLayer(layer);
-                        }
-                    });
+                    markersLayer.clearLayers();
 
                     // Ensure data is an array
                     let locations = Array.isArray(data) ? data : (data.locations || []);
@@ -458,14 +427,6 @@
             });
         }
 
-        // document.getElementById('search-input').addEventListener('keyup', function(event) {
-        //     if (event.key === 'Enter') {
-        //         performSearch();
-        //     }
-        // });
-
-
-
         function createPopupContent(location) {
             var content = '<strong>' + (location.osmNode.tags.name || 'Unnamed Location') + '</strong><br>';
             content += 'Latitude: ' + location.coordinates.latitude.toFixed(6) + '<br>';
@@ -510,8 +471,39 @@
             }
         }
 
+        function createRouteLayer(routeData) {
+            let route = L.featureGroup();
+            
+            if (routeData.segments && routeData.segments.length > 0) {
+                routeData.segments.forEach(segment => {
+                    var coordinates = [
+                        [segment.startLat, segment.startLon],
+                        [segment.endLat, segment.endLon]
+                    ];
+                    var color = getColorForSpeedLimit(segment.speedLimit);
+                    createRouteSegment(coordinates, color, route);
+                });
+            } else if (routeData.coordinates && routeData.coordinates.length > 0) {
+                L.polyline(routeData.coordinates.map(coord => [coord.latitude, coord.longitude]), {
+                    color: 'blue',
+                    opacity: 0.8,
+                    weight: 5
+                }).addTo(route);
+            } else {
+                console.error("No valid route data found");
+                return null;
+            }
+            
+            return route;
+        }
+
         function createRoute(start, end, routeType) {
             console.log("Start:", start, "End:", end, "Route Type:", routeType);
+
+            if (currentRoute) {
+                map.removeLayer(currentRoute);
+                currentRoute = null;
+            }
 
             const startLat = start.lat;
             const startLon = start.lng;
@@ -529,40 +521,16 @@
                 .then(routeData => {
                     // console.log("Route data received:", JSON.stringify(routeData, null, 2));
 
+                    currentRoute = createRouteLayer(routeData)
                     if (currentRoute) {
-                        map.removeLayer(currentRoute);
-                    }
-
-                    if (routeData.segments && routeData.segments.length > 0) {
-                        currentRoute = L.featureGroup().addTo(map);
+                        currentRoute.addTo(map);
                         routeInfoControl.addTo(map);
-        
-                        routeData.segments.forEach(segment => {
-                            var coordinates = [
-                                [segment.startLat, segment.startLon],
-                                [segment.endLat, segment.endLon]
-                            ];
-                            var color = getColorForSpeedLimit(segment.speedLimit);
-                            createRouteSegment(coordinates, color);
-                        });
-                    } else if (routeData.coordinates && routeData.coordinates.length > 0) {
-                        currentRoute = L.polyline(routeData.coordinates.map(coord => [coord.latitude, coord.longitude]), {
-                            color: 'blue',
-                            opacity: 0.8,
-                            weight: 5
-                        }).addTo(map);
+                        legendControl.addTo(map);
+                        displayRouteInfo(routeData);
+                        map.fitBounds(currentRoute.getBounds().pad(0.2));
                     } else {
-                        throw new Error("No valid route data found");
+                        throw new Error("Failed to create route layer");
                     }
-
-                    
-                    // Show the legend when a route is created
-                    legendControl.addTo(map);
-
-                    displayRouteInfo(routeData);
-
-                    // Fit the map to the bounds of the route
-                    map.fitBounds(currentRoute.getBounds().pad(0.2));
                 })
                 .catch(error => {
                     console.error('Error fetching route:', error);
@@ -570,24 +538,25 @@
                 });
         }
 
-        function createRouteSegment(coordinates, color) {
-             // Create the black "stroke" polyline
+        function createRouteSegment(coordinates, color, route) {
+            // Create the black "stroke" polyline
             L.polyline(coordinates, {
                 color: 'black',
-                weight: 7,  // Slightly thicker than the colored line
-                opacity: 0.1,  // Reduced opacity to make it less prominent
+                weight: 7,
+                opacity: 0.1,
                 lineJoin: 'round',
                 lineCap: 'round'
-            }).addTo(currentRoute);
+            }).addTo(route);
+            
             // Create the colored polyline on top
             L.polyline(coordinates, {
-              color: color,
-              weight: 6,
-              opacity: 1,
-              lineJoin: 'round',
-              lineCap: 'round'
-            }).addTo(currentRoute);
-          }
+                color: color,
+                weight: 6,
+                opacity: 1,
+                lineJoin: 'round',
+                lineCap: 'round'
+            }).addTo(route);
+        }
 
           function displayRouteInfo(routeData) {
             console.log("Route distance: " + routeData.distance);
@@ -646,7 +615,8 @@
 
              // Add custom controls
             addCustomButton(map);
-            legendControl.addTo(map);
+
+            markersLayer = L.layerGroup().addTo(map);
 
             // Set up click event for setting starting point
             map.on('click', function(e) {
@@ -667,25 +637,26 @@
             map.on('blur', function() { map.scrollWheelZoom.disable(); });
         }
 
-        // Add this after all the function definitions and map initialization
-        document.addEventListener('DOMContentLoaded', function() {
+        function initializeEventListeners() {
             setLocationBtn = document.getElementById('set-location-btn');
             if (setLocationBtn) {
                 setLocationBtn.addEventListener('click', toggleSetStartPointMode);
             } else {
                 console.error("Set Location button not found");
             }
-
-            initializeMap();
-
-            // Set up other event listeners
+        
             document.getElementById('category-select').addEventListener('change', updateTypeOptions);
             document.getElementById('search-input').addEventListener('keyup', function(event) {
                 if (event.key === 'Enter') {
                     performSearch();
                 }
             });
+        }
 
+        // Add this after all the function definitions and map initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeEventListeners();
+            initializeMap();
             updateTypeOptions();
         });
     </script>
