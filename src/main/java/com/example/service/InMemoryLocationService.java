@@ -17,6 +17,7 @@ import com.example.util.TestDataGenerator;
 import com.example.model.Node;
 import java.util.logging.Logger;
 import java.util.concurrent.ConcurrentHashMap;
+import com.example.util.MemoryUtil;
 
 public class InMemoryLocationService implements LocationService {
     private static final Logger logger = Logger.getLogger(InMemoryLocationService.class.getName());
@@ -48,6 +49,7 @@ public class InMemoryLocationService implements LocationService {
         }
 
         logger.info("Initialized locations from graph with " + locations.size() + " nodes");
+        logger.info("Memory usage after initializing locations: " + MemoryUtil.getMemoryUsage());
     }
 
     
