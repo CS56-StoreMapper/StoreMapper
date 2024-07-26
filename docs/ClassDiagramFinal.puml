@@ -1,0 +1,275 @@
+```plantuml
+@startuml
+
+skinparam classAttributeIconSize 0
+
+abstract class Location {
+    -id: long
+    -coordinates: Coordinates
+    -osmNode: Node
+    +getId(): long
+    +getLatitude(): double
+    +getLongitude(): double
+    +getCoordinates(): Coordinates
+    +getOsmNode(): Optional<Node>
+    +getOsmTag(key: String): Optional<String>
+    +getOsmTags(): Map<String, String>
+    +getName(): String
+    +getAmenity(): String
+    +getShop(): String
+    +getBrand(): String
+    +getCuisine(): String
+    +getAddress(): String
+    +isRestaurant(): boolean
+    +isStore(): boolean
+    {abstract} +getType(): LocationType
+    +distanceTo(other: Location): double
+    +distanceToInMiles(other: Location): double
+    +isOsmBased(): boolean
+}
+
+class Store extends Location {
+    +getType(): LocationType
+}
+
+class Restaurant extends Location {
+    +getType(): LocationType
+}
+
+class Node <<record>> {
+    -id: long
+    -lat: double
+    -lon: double
+    -tags: Map<String, String>
+    +toCoordinates(): Coordinates
+    +getTag(key: String): String 
+    +{static} fromMap(map: Map<String, Object>): Node
+    +{static} create(data: Map<String, Object>): Optional<Node>
+}
+
+class Way <<record>> {
+    -id: Long
+    -startNode: Node
+    -endNode: Node
+    -data: Map<String, Object>
+    +getNodeIds(): List<Long>
+    +getTags(): Map<String, String>
+    +{static} create(id: Long, startNode: Node, endNode: Node, data: Map<String, Object>): Way
+    +{static} fromMap(map: Map<String, Object>): Way
+    +withNodes(newStartNode: Node, newEndNode: Node): Way
+    +isOneWay(): boolean
+    +getHighwayType(): String
+    +getSpeedLimitMph(): int
+}
+
+class Graph {
+    -nodesById: Map<Long, Node>
+    -adjacencyList: Map<Node, Map<Node, Way>>
+    +addNode(node: Node): void
+    +addWay(way: Way): void
+    +getNodes(): List<Node>
+    +getNode(id: long): Node
+    +getNeighbors(node: Node): Set<Node>
+    +getWay(start: Node, end: Node): Way
+    +findNearestRelevantNode(coordinates: Coordinates): Node
+    +findShortestPath(start: Node, end: Node): List<Node>
+    +getNodeCount(): int
+    +getWayCount(): int
+    +getNodeIds(): Set<Long>
+    +printGraphStructure(): void
+    +printNodeAdjacencyList(nodeId: long): void 
+}
+
+class Coordinates <<record>> {
+    -latitude: double
+    -longitude: double
+    +distanceTo(other: Coordinates): double
+    +{static} getDestinationPoint(start: Coordinates, distanceKm: double, bearingDegrees: double): Coordinates
+}
+
+enum LocationType {
+    STORE
+    RESTAURANT
+}
+
+class Route {
+    -nodes: List<Node>
+    -totalDistance: double
+    -graph: Graph
+    +Route(nodes: List<Node>, graph: Graph)
+    +getNodes(): List<Node>
+    +getCoordinates(): List<Coordinates>
+    +getTotalDistance(): double
+    +getEstimatedTime(fastest: boolean): double
+    +getRouteSegments(): List<Map<String, Object>>
+    +estimateTravelTime(averageSpeedKmh: double): double
+    +getTurnByTurnDirections(): List<String> 
+}
+
+interface LocationService {
+    +getAllLocations(): List<Location>
+    +searchLocations(query: String): List<Location>
+    +searchLocationsByOsmTag(key: String, value: String): List<Location>
+    +findNearestLocation(coordinates: Coordinates, filter: Predicate<Location>): Optional<Location>
+    +findLocationsWithinRadius(coordinates: Coordinates, radiusKm: double, filter: Predicate<Location>): List<Location>
+    +addLocation(location: Location): void
+    +getLocationById(id: long): Location
+    +updateLocation(location: Location): void
+    +deleteLocation(id: long): void
+    +getGraph(): Graph
+}
+
+class InMemoryLocationService implements LocationService {
+    -locations: Map<Long, Location>
+    -graph: Graph
+}
+
+interface RouteStrategy {
+    +calculateRoute(start: Node, end: Node): Route
+    +setGraph(graph: Graph): void
+}
+
+class DijkstraRouteStrategy implements RouteStrategy {
+    -graph: Graph
+    -pathFinder: DijkstraPathFinder
+    +calculateRoute(start: Node, end: Node): Route
+    +setGraph(graph: Graph): void
+}
+
+class FastestRouteStrategy implements RouteStrategy {
+    -graph: Graph
+    -pathFinder: FastestPathFinder
+    +calculateRoute(start: Node, end: Node): Route
+    +setGraph(graph: Graph): void
+}
+
+class DijkstraPathFinder {
+    -graph: Graph
+    +findShortestPath(start: Node, end: Node): List<Node>
+}
+
+class FastestPathFinder {
+    -graph: Graph
+    +findFastestPath(start: Node, end: Node): List<Node>
+}
+
+class MapService {
+    -locationService: LocationService
+    -graph: Graph
+    -shortestRouteStrategy: RouteStrategy
+    -fastestRouteStrategy: RouteStrategy
+    +findNearestLocation(point: Coordinates): Optional<Location>
+    +findNearestLocation(point: Coordinates, filter: Predicate<Location>): Optional<Location>
+    +findLocationsByOsmTag(key: String, value: String): List<Location>
+    +findLocationsWithinRadius(point: Coordinates, radiusKm: double): List<Location>
+    +calculateShortestRoute(start: Coordinates, end: Coordinates): Route
+    +calculateFastestRoute(start: Coordinates, end: Coordinates): Route
+    +getNodeCount(): int
+    +getWayCount(): int
+    +searchLocationsWithinRadiusAndKeyword(query: String, category: String, type: String, center: Coordinates, radiusKm: double): List<Location>
+    +adjustToBounds(point: Coordinates): Coordinates
+}
+
+class LocationServlet <<Servlet>> {
+    -locationService: LocationService
+    -mapService: MapService
+    -osmDataLoader: OSMDataLoader
+}
+
+class DistanceUtil {
+    +{static} milesToKm(miles: double): double
+    +{static} kmToMiles(km: double): double
+}
+
+class TestDataGenerator {
+    +{static} generateTestGraph(nodeCount: int): Graph
+}
+
+class OSMDataLoader {
+    +<T> loadData(filename: String, mapper: Function<Map<String, Object>, T>): List<T>
+    +<T> loadData(inputStream: InputStream, mapper: Function<Map<String, Object>, T>): List<T>
+    +<T> saveData(items: List<T>, filename: String): void
+    +{static} getLong(map: Map<String, Object>, key: String): Optional<Long>
+    +{static} getDouble(map: Map<String, Object>, key: String): Optional<Double>
+    +{static} getStringMap(map: Map<String, Object>, key: String): Optional<Map<String, String>>
+    +{static} <T> getList(map: Map<String, Object>, key: String, elementType: Class<T>): Optional<List<T>>
+}
+
+class OSMConverter {
+    +{static} convertOSMToSerializedFormat(filename: String): void
+}
+
+class GeoJsonLoader {
+    +{static} loadGeoJson(filename: String): String
+}
+
+class TypeLoader {
+    +{static} loadTypes(filename: String): List<String>
+}
+
+class Bounds <<record>> {
+    - minlat: double
+    - minlon: double
+    - maxlat: double
+    - maxlon: double
+    + contains(coordinates: Coordinates): boolean
+}
+
+class ColoredConsoleHandler << (H, #FFAAAA) Handler>> {
+}
+note "Implements java.util.logging.Handler" as N2
+ColoredConsoleHandler .. N2
+
+class ErrorResponse <<record>> {
+    - message: String
+}
+
+class RoadUtil {
+    +{static} getDefaultSpeedLimit(highwayType: String): int
+}
+
+class MemoryUtil {
+    +{static} getMemoryUsage(): String
+}
+
+MapService *-- LocationService
+MapService *-- Graph
+MapService *-- RouteStrategy
+MapService ..> DijkstraRouteStrategy
+MapService ..> FastestRouteStrategy
+LocationServlet *-- LocationService
+LocationServlet *-- MapService
+LocationServlet ..> OSMDataLoader
+Location -- Coordinates
+Location -- Node
+Route -- Node
+Route -- Graph
+Graph *-- Node
+Graph *-- Way
+InMemoryLocationService -- Graph
+OSMDataLoader ..> Graph
+OSMDataLoader ..> Node
+OSMDataLoader ..> Way
+OSMDataService -- OSMDataLoader
+OSMDataService ..> Node
+OSMDataService ..> Way
+OSMDataService ..> DataFileManager
+OSMDataLoader ..> DataFileManager
+MapService ..> Route
+MapService ..> DistanceUtil
+MapService ..> Bounds
+LocationServlet ..> Bounds
+TestDataGenerator ..> Graph
+TestDataGenerator ..> Node
+TestDataGenerator ..> Way
+FastestPathFinder -- Graph
+FastestPathFinder ..> RoadUtil
+DijkstraPathFinder -- Graph
+DijkstraRouteStrategy -- DijkstraPathFinder
+
+note "All Servlet classes use Jakarta EE\nfor Tomcat 10 compatibility" as N1
+LocationServlet .. N1
+
+
+
+@enduml
