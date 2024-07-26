@@ -52,7 +52,7 @@ mvn clean install
 
 Our project includes several key design documents:
 
-1. [`HANDIN-README.md`](HANDIN-README.md) and [`HANDIN-README.pdf`](docs/HANDIN-README.pdf): The final project submission document, containing crucial information about the project, including:
+1. [`HANDIN-README.md`](HANDIN-README.md) and [`HANDIN-README.pdf`](HANDIN-README.pdf): The final project submission document, containing crucial information about the project, including:
    - Names of group members
    - Java version used
    - IDE used
