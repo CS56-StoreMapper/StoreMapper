@@ -100,7 +100,7 @@
   sudo ufw allow 8080/tcp
   ```
 
-## Environment Setup
+### Environment Setup
 
 ### Local Development Environment
 - Set CATALINA_HOME to point to the active Tomcat installation
@@ -126,3 +126,73 @@
 
 ### Note on Environment Differences
 The local development environment uses shell environment variables for flexibility, while the production environment on DigitalOcean relies on system service configurations for stability and security. When troubleshooting deployment issues, be aware of these differences in how Java and Tomcat are managed between environments.
+
+### Configuring JAVA_HOME for Tomcat
+
+#### Local Development Environment
+On your local machine, you may need to update the JAVA_HOME environment variable in the Tomcat service file:
+
+1. Edit the Tomcat service file:
+   ```sh
+   sudo nano /etc/systemd/system/tomcat10.service
+   ```
+2. Update the JAVA_HOME environment variable:
+   ```
+   Environment=JAVA_HOME=/path/to/your/java-21-installation
+   ```
+3. Save and exit the editor
+
+#### DigitalOcean Droplet (Production Environment)
+On the DigitalOcean Droplet, the JAVA_HOME configuration is typically handled automatically during the Tomcat installation. The service file usually doesn't require manual editing for JAVA_HOME.
+
+Here's an example of the Tomcat service configuration on the Droplet:
+
+```ini
+[Unit]
+Description=Apache Tomcat 10 Web Application Server
+Documentation=https://tomcat.apache.org/tomcat-10.0-doc/index.html
+After=network.target
+RequiresMountsFor=/var/log/tomcat10 /var/lib/tomcat10
+
+[Service]
+
+# Configuration
+Environment="CATALINA_HOME=/usr/share/tomcat10"
+Environment="CATALINA_BASE=/var/lib/tomcat10"
+Environment="CATALINA_TMPDIR=/tmp"
+Environment="JAVA_OPTS=-Djava.awt.headless=true"
+
+# Lifecycle
+Type=simple
+ExecStartPre=+/usr/libexec/tomcat10/tomcat-update-policy.sh
+ExecStart=/bin/sh /usr/libexec/tomcat10/tomcat-start.sh
+SuccessExitStatus=143
+Restart=on-abort
+
+# Logging
+SyslogIdentifier=tomcat10
+
+# Security
+User=tomcat
+Group=tomcat
+PrivateTmp=yes
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+CacheDirectory=tomcat10
+CacheDirectoryMode=750
+ProtectSystem=strict
+ReadWritePaths=/etc/tomcat10/Catalina/
+ReadWritePaths=/var/lib/tomcat10/webapps/
+ReadWritePaths=/var/log/tomcat10/
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Note that this configuration doesn't explicitly set JAVA_HOME. The Java installation is typically managed by the system, and Tomcat is configured to use the default Java installation.
+
+### Important Differences
+- Local setup may require manual JAVA_HOME configuration
+- DigitalOcean Droplet uses system-managed Java installation
+- The service configurations between local and production environments may differ
+- Always verify the actual configuration on your specific environment
