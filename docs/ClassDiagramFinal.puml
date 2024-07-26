@@ -1,4 +1,3 @@
-```plantuml
 @startuml
 
 skinparam classAttributeIconSize 0
@@ -96,7 +95,6 @@ class Route {
     -nodes: List<Node>
     -totalDistance: double
     -graph: Graph
-    +Route(nodes: List<Node>, graph: Graph)
     +getNodes(): List<Node>
     +getCoordinates(): List<Coordinates>
     +getTotalDistance(): double
@@ -122,6 +120,10 @@ interface LocationService {
 class InMemoryLocationService implements LocationService {
     -locations: Map<Long, Location>
     -graph: Graph
+}
+
+class "InMemoryLocationService$ChunkProcessor" {
+    -processChunk(chunk: List<Map<String, Object>>): void
 }
 
 interface RouteStrategy {
@@ -174,6 +176,8 @@ class LocationServlet <<Servlet>> {
     -locationService: LocationService
     -mapService: MapService
     -osmDataLoader: OSMDataLoader
+    -typeLoader: TypeLoader
+    -geoJsonLoader: GeoJsonLoader
 }
 
 class DistanceUtil {
@@ -186,8 +190,8 @@ class TestDataGenerator {
 }
 
 class OSMDataLoader {
-    +<T> loadData(filename: String, mapper: Function<Map<String, Object>, T>): List<T>
-    +<T> loadData(inputStream: InputStream, mapper: Function<Map<String, Object>, T>): List<T>
+    +<T> loadData(filename: String, mapper: OSMDataMapper<T>): List<T>
+    +<T> loadData(inputStream: InputStream, mapper: OSMDataMapper<T>): List<T>
     +<T> saveData(items: List<T>, filename: String): void
     +{static} getLong(map: Map<String, Object>, key: String): Optional<Long>
     +{static} getDouble(map: Map<String, Object>, key: String): Optional<Double>
@@ -195,8 +199,22 @@ class OSMDataLoader {
     +{static} <T> getList(map: Map<String, Object>, key: String, elementType: Class<T>): Optional<List<T>>
 }
 
-class OSMConverter {
-    +{static} convertOSMToSerializedFormat(filename: String): void
+interface OSMDataMapper<T> {
+    +apply(Map<String, Object>): T
+}
+
+class OSMDataService {
+    -dataLoader: OSMDataLoader
+    -loadedNodes: Map<Long, Node>
+    +loadNodes(nodesFileName: String, waysFileName: String): List<Node>
+    +loadWays(filename: String): List<Way>
+    -mapToWays(map: Map<String, Object>, nodes: Map<Long, Node>): List<Way>
+}
+
+class DataFileManager {
+    +{static} DATA_DIR: String
+    +{static} getDataFile(fileName: String): File
+    -{static} downloadFile(fileName: String, destination: File): void
 }
 
 class GeoJsonLoader {
@@ -208,11 +226,11 @@ class TypeLoader {
 }
 
 class Bounds <<record>> {
-    - minlat: double
-    - minlon: double
-    - maxlat: double
-    - maxlon: double
-    + contains(coordinates: Coordinates): boolean
+    -minlat: double
+    -minlon: double
+    -maxlat: double
+    -maxlon: double
+    +contains(coordinates: Coordinates): boolean
 }
 
 class ColoredConsoleHandler << (H, #FFAAAA) Handler>> {
@@ -221,7 +239,7 @@ note "Implements java.util.logging.Handler" as N2
 ColoredConsoleHandler .. N2
 
 class ErrorResponse <<record>> {
-    - message: String
+    -message: String
 }
 
 class RoadUtil {
@@ -240,6 +258,8 @@ MapService ..> FastestRouteStrategy
 LocationServlet *-- LocationService
 LocationServlet *-- MapService
 LocationServlet ..> OSMDataLoader
+LocationServlet ..> TypeLoader
+LocationServlet ..> GeoJsonLoader
 Location -- Coordinates
 Location -- Node
 Route -- Node
@@ -247,6 +267,7 @@ Route -- Graph
 Graph *-- Node
 Graph *-- Way
 InMemoryLocationService -- Graph
+InMemoryLocationService +-- "InMemoryLocationService$ChunkProcessor"
 OSMDataLoader ..> Graph
 OSMDataLoader ..> Node
 OSMDataLoader ..> Way
@@ -266,10 +287,13 @@ FastestPathFinder -- Graph
 FastestPathFinder ..> RoadUtil
 DijkstraPathFinder -- Graph
 DijkstraRouteStrategy -- DijkstraPathFinder
+FastestRouteStrategy -- FastestPathFinder
+OSMDataLoader ..> OSMDataMapper
 
 note "All Servlet classes use Jakarta EE\nfor Tomcat 10 compatibility" as N1
 LocationServlet .. N1
 
-
+note "ChunkProcessor handles data chunking\nfor large datasets during loading" as N3
+InMemoryLocationService .. N3
 
 @enduml
