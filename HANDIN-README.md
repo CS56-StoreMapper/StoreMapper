@@ -55,7 +55,7 @@ Our maps and ground truth paths were sourced from the "Frugal Maps" Fall 2020 MI
 We configured Tomcat to run in different environments (standalone in Ubuntu, Eclipse integrated Tomcat, command line in WSL2 / Digital Ocean). This involved understanding and managing environment variables, like JAVA_HOME and CATALINA_HOME across different setups.
 
 ### Deployment
-We deployed the application as '''ROOT.war''' to serve at the root context. This had to be done manually in the command line for Ubuntu+WSL2 and Digital Ocean. Additionally, we configured Eclipse to serve the application at the root context.
+We deployed the application as ```ROOT.war``` to serve at the root context. This had to be done manually in the command line for Ubuntu+WSL2 and Digital Ocean. Additionally, we configured Eclipse to serve the application at the root context.
 
 ## E. Current Limitations and Attempted Solutions
 - Performance issues
