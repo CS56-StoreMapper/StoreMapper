@@ -44,23 +44,31 @@ mvn clean install
 ```
 
 4. Deploy the WAR file to Tomcat:
-   - Copy the generated `target/storemapper.war` to your Tomcat's `webapps` directory
+   - Copy the generated `target/storemapper.war` to your Tomcat's `webapps` directory as `ROOT.war`
 
-5. Start Tomcat and access the application at `http://localhost:8080/storemapper`
+5. (Re)start Tomcat and access the application at `http://localhost:8080/`
 
 ## Design Documentation
 
 Our project includes several key design documents:
 
-1. [`docs/architecture.md`](docs/architecture.md): A comprehensive overview of the StoreMapper architecture, including the class diagram, key components, data flow, design decisions, and future considerations. This document reflects the current state of the project, including the integration of OpenStreetMap data structures.
+1. [`HANDIN-README.md`](HANDIN-README.md) and [`HANDIN-README.pdf`](docs/HANDIN-README.pdf): The final project submission document, containing crucial information about the project, including:
+   - Names of group members
+   - Java version used
+   - IDE used
+   - Challenges faced
+   - Current limitations and attempted solutions
+   - Future work
+
+   This document is essential for understanding the project's final state and development process.
 
 2. [`docs/ClassDiagramFinal.puml`](docs/ClassDiagramFinal.puml): The final UML class diagram representing the current project structure. To view this file, use a PlantUML viewer or online tools like [PlantUML Web Server](http://www.plantuml.com/plantuml/uml/).
 
-3. [`docs/class_diagram_summary.md`](docs/class_diagram_summary.md): A detailed explanation of the pre-OSM class diagram, including rationale for design decisions and implementation approach. While some aspects may be outdated, it provides historical context for the project's evolution.
+3. [`docs/architecture.md`](docs/architecture.md): A comprehensive overview of the StoreMapper architecture, including key components, data flow, design decisions, and future considerations. This document reflects the current state of the project, including the integration of OpenStreetMap data structures.
 
-4. [`docs/adding_node_way.md`](docs/adding_node_way.md): An integration plan and roadmap for OSM data structures, reflecting the current state of the project and future development plans.
+4. [`docs/class_diagram_summary.md`](docs/class_diagram_summary.md): A detailed explanation of the pre-OSM class diagram, including rationale for design decisions and implementation approach. While some aspects may be outdated, it provides historical context for the project's evolution.
 
-5. [`HANDIN-README.md`](HANDIN-README.md): The final project submission document, containing detailed information about the project, including team members, challenges faced, current limitations, and future work.
+5. [`docs/adding_node_way.md`](docs/adding_node_way.md): An integration plan and roadmap for OSM data structures, reflecting the current state of the project and future development plans.
 
 These documents serve as a reference for our project's architecture and design principles. Please refer to them when making significant changes to the project structure or for a comprehensive overview of the final project state.
 
