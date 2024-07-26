@@ -58,19 +58,23 @@ We configured Tomcat to run in different environments (standalone in Ubuntu, Ecl
 We deployed the application as ```ROOT.war``` to serve at the root context. This had to be done manually in the command line for Ubuntu+WSL2 and Digital Ocean. Additionally, we configured Eclipse to serve the application at the root context.
 
 ## E. Current Limitations and Attempted Solutions
-- Performance issues
-- Memory management
-- UI Responsiveness
+### Performance Issues
+When processing very large OSM datasets, we encountered very slow performance. To resolve this, we limited ourselves to small/medium datasets (~ 500-1000 MB Nodes and Ways). For larger datasets, we would need to incorporate a more efficient chunking strategy, spatial indexing, to find the nearest node to given coordinates.
+### Memory Management
+Searching without qualifiers on the 4GB DO droplet leads to Heap Overflow errors.
+### UI Responsiveness
+The front-end crashes if the user loads all locations in West Los Angeles at once. To resolve this, we would need to implement a Level-of-Detail strategy to load only the visible locations at once, and/or selectively show a subset for the current zoom view.
 
 ## F. Future Work
-1. Database Integration
-2. Performance Optimization
-3. Advanced Routing Features
-4. User Experience Improvements
-5. Data Management and Updates
-
+### Database Integration
+We would like to move from an in-memory ```MapService``` to a database-backed solution. We would also like to implement PostGIS and PostgreSQL to store and query OSM data efficiently and optimize spatial queries. 
+### Performance Optimization
+We would like to implement advanced spatial indexing (R-tree) for faster nearest-neighbor queries in addition to developing a caching strategy for frequently accessed routes and locations. Ultimately, we hope to optimize our algorithms for larger datasets.
+### Advanced Routing Features
+To make the data we show users even more robust and detailed, we feel that incorporating alternate modes of transport, like walking and cycling, would be benefical. On top of this, it would be interesting to incorporate multi-modal routing where a user can walk and bike to a destination. Real-time traffic data would be useful, as well as multi-stop routes.
+### User Experience Improvements
+We would like to implement a more sophisticated UI that works well with mobile devices. User account systems will be created to save favorite locations and routes. In the future, we hope to add support for user-generated content, such as reviews and ratings.
+### Data Management and Updates
+We would like to develop a system for regular updates of OSM data. In addition, we would need to implement a data validation/cleaning pipeline for user-submitted data. Lastly, we would like to create an administrative interface to manage location data and user content.
 ## Conclusion
-- Key learnings from the project
-- Skills gained
-- Potential for future development
- 
+The StoreMapper project has been a significant undertaking, challenging us to integrate complex data structures, implement efficient algorithms, and create a user-friendly web interface. Through this process, we've gained valuable experience in: working with real-world geographical data and the challenges it presents, implementing and optimizing graph-based algorithms for pathfinding, balancing performance and functionality in web application development, and collaborative problem-solving and version control in a team environment.
