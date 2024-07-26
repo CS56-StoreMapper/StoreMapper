@@ -11,7 +11,6 @@ import com.example.model.Bounds;
 import com.example.model.Coordinates;
 import com.example.model.Location;
 import com.example.model.Route;
-import com.example.web.LocationServlet;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.example.model.Node;
@@ -19,7 +18,7 @@ import com.example.model.Graph;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
-
+import com.example.util.MemoryUtil;
 
 /**
  * Service class for map-related operations.
@@ -225,6 +224,7 @@ public final class MapService {
         }
 
         logger.info("Fastest route found: " + route.getNodes().size() + " nodes, start: " + route.getNodes().get(0) + ", end: " + route.getNodes().get(route.getNodes().size() - 1));
+        logger.info("Memory usage after calculating fastest route: " + MemoryUtil.getMemoryUsage());
         return route;
     }
 
