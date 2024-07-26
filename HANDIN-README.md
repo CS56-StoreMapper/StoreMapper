@@ -1,12 +1,13 @@
 # CS56 Web Application: StoreMapper
 
 ## Introduction
-- Brief description of StoreMapper
-- Link to deployed application
+
 
 ### Project Overview
-- Purpose of the application
-- Key features (bullet points)
+StoreMapper is a web-based application desgined to manage and visualize location data, primarily focusing on stores and restaurants. It uses OpenStreetMap (OSM) data structures for its mapping and routing features, such as:
+* Interactive map interface using Leaflet.js
+* Location search and filtering based on OSM tags
+* Shortest and fastest path routing between locations using Djikstra's algorithm
 
 ### Key Features and Achievements
 1. OSM Data Integration
@@ -19,13 +20,20 @@
 8. Performance Optimization
 
 ## A. Names of Group Members
-[List of team members]
+* Carson Bell
+* Wei Che
+* David Dickinson
+* Beckham Lee
+* Adityan Vairavel
 
 ## B. Java Version
-[Specify Java version used]
+JDK 21.0.3
 
 ## C. IDEs
-[List IDEs used by the team]
+* Eclipse IDE for Enterprise Java and Web Developers (includes Incubating components)
+   * Version: 2024-06 (4.32.0)
+   * Build id: 20240606-1231
+* IntelliJ IDEA 2024.1.4 (Ultimate Edition) 
 
 ## D. Challenges Faced
 ### Integrating OpenStreetMap (OSM) data structures
