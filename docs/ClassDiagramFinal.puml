@@ -123,7 +123,7 @@ class InMemoryLocationService implements LocationService {
 }
 
 class "InMemoryLocationService$ChunkProcessor" {
-    -processChunk(chunk: List<Map<String, Object>>): void
+    -processChunk(chunk: List<Node>): void
 }
 
 interface RouteStrategy {
@@ -200,7 +200,7 @@ class OSMDataLoader {
 }
 
 interface OSMDataMapper<T> {
-    +apply(Map<String, Object>): T
+    +map(data: Map<String, Object>): Optional<T>
 }
 
 class OSMDataService {
@@ -211,10 +211,10 @@ class OSMDataService {
     -mapToWays(map: Map<String, Object>, nodes: Map<Long, Node>): List<Way>
 }
 
-class DataFileManager {
-    +{static} DATA_DIR: String
-    +{static} getDataFile(fileName: String): File
-    -{static} downloadFile(fileName: String, destination: File): void
+class "DataFileManager" {
+    +DATA_DIR: String
+    +getDataFile(fileName: String): File
+    -downloadFile(fileName: String, destination: File): void
 }
 
 class GeoJsonLoader {
@@ -264,10 +264,10 @@ Location -- Coordinates
 Location -- Node
 Route -- Node
 Route -- Graph
-Graph *-- Node
-Graph *-- Way
+Graph "1" *-- "*" Node
+Graph "1" *-- "*" Way
 InMemoryLocationService -- Graph
-InMemoryLocationService +-- "InMemoryLocationService$ChunkProcessor"
+InMemoryLocationService ..> "InMemoryLocationService$ChunkProcessor"
 OSMDataLoader ..> Graph
 OSMDataLoader ..> Node
 OSMDataLoader ..> Way
@@ -295,5 +295,8 @@ LocationServlet .. N1
 
 note "ChunkProcessor handles data chunking\nfor large datasets during loading" as N3
 InMemoryLocationService .. N3
+
+note "Handles HTTP requests related to locations and routes" as N4
+LocationServlet .. N4
 
 @enduml
