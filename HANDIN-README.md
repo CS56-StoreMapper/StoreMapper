@@ -2,6 +2,7 @@
 
 ## Introduction
 StoreMapper is a web-based application desgined to manage and visualize location data, primarily focusing on stores and restaurants. It uses OpenStreetMap (OSM) data structures for its mapping and routing features.
+The application is deployed at this [link](http://64.23.180.16/)
 
 ### Project Overview
 StoreMapper utilizes Leaflet.js to display an interactive map to users. Users are able to use the map to both search and filter for locations based on OSM tags. After locations are selected, the application determines the fastest path between locations using Djikstra's algorithm.
