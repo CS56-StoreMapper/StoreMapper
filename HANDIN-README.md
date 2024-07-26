@@ -46,7 +46,7 @@ We used Djikstra's algorithm to find the shortest path between two locations. To
 We needed to incorporate an interactive route display using Leaflet.js, which consisted of learning the specifics of Leaflet controls, layers, and markers. We also needed to add styling to certain elements for a cleaner UI: route information, color-coded route segments, and clickable markers on locations. We also implemented a search feature for the "Store" and "Restaurant" categories, which involved extracting unique sets from the OSM data and passing this data from the backend to the front-end. Finally, we encountered challenges learning how to use the JavaServer Pages (JSP) templating.
 
 ### Testing & Validation
-- [Points about testing challenges]
+We struggled to create a consistent runtime environment between our team members. Some of us used different operating systems or IDE's, which made consistent configuration difficult.
 
 ### Data & Memory Management
 Our maps and ground truth paths were sourced from the "Frugal Maps" Fall 2020 MIT 6.009 problem set. The large files in this dataset (~ 500 MB for nodes, ~ 180 MB for ways) were placed into the /data directory and in Github's Large File Storage (LFS) system. However, continuous integration tests by GitHub workflow led to the data being constantly redownloaded, which ate through our 1.5GB LFS quota. To resolve this, we moved the data to Cloudflare R2 and had to workflow download data on-demand.
