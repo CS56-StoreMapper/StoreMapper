@@ -43,7 +43,7 @@
             min-width: 200px;
         }
         #radius-input {
-            width: 80px;
+            width: 40px;
         }
         button {
             background-color: #4CAF50;
@@ -675,6 +675,21 @@
                 maxZoom: 19,
                 minZoom: 12
             });
+
+            
+            // Use the GeoJSON object directly
+            console.log("Received boundaryGeoJson:", ${boundaryGeoJson});
+            let boundaryGeoJsonData = ${boundaryGeoJson};
+            L.geoJSON(boundaryGeoJsonData, {
+                style: function (feature) {
+                    return {
+                        color: "#0066FF", // Royal Blue
+                        weight: 2,
+                        opacity: 0.65,
+                        fillOpacity: 0.05
+                    };
+                }
+            }).addTo(map);
 
 
             // Add the OpenStreetMap tile layer

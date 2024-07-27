@@ -108,6 +108,13 @@
       <version>1.26.2</version>
     </dependency>
 
+    <!-- For handling text processing -->
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-text</artifactId>
+      <version>1.10.0</version>
+    </dependency>
+
     <!-- JSON processing (alternative to Gson, used in some utility classes) -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
@@ -199,6 +206,10 @@
     <resources>
       <resource>
         <directory>src/main/resources</directory>
+        <includes>
+          <include>**/*.json</include>
+          <include>**/*.geojson</include>
+        </includes>
       </resource>
     </resources>
   </build>

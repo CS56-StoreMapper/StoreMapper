@@ -3,6 +3,7 @@ package com.example.model;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.logging.Logger;
+import com.example.util.MemoryUtil;
 
 /**
  * Represents a graph of the road network, storing nodes and ways from OpenStreetMap data.
@@ -44,6 +45,7 @@ public class Graph {
             
         nodes.forEach(this::addNode);
         ways.forEach(this::addWay);
+        logger.info("Memory usage after building graph: " + MemoryUtil.getMemoryUsage());
     }
 
     /**

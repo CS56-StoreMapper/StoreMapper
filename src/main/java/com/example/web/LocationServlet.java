@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import org.apache.commons.text.StringEscapeUtils;
+
 import com.google.gson.Gson;
 
 import jakarta.servlet.ServletException;
@@ -29,6 +31,7 @@ import com.example.util.OSMDataLoader;
 import com.example.util.TypeLoader;
 import com.example.util.DistanceUtil;
 import com.example.util.MemoryUtil;
+import com.example.util.GeoJsonLoader;
 
 @WebServlet(name = "LocationServlet", urlPatterns = {"/", "/locations", "/route", "/nearest", "/within-radius", "/search"})
 public class LocationServlet extends HttpServlet {
@@ -46,6 +49,8 @@ public class LocationServlet extends HttpServlet {
     private LocationService locationService;
     private MapService mapService;
     private OSMDataLoader osmDataLoader = new OSMDataLoader();
+
+    private static final String boundaryGeoJson = GeoJsonLoader.loadGeoJson("west_los_angeles.nodes_boundary.geojson");
 
     @Override
     public void init() throws ServletException {
@@ -141,6 +146,10 @@ public class LocationServlet extends HttpServlet {
                     List<String> categories = List.of("restaurant", "store");
                     request.setAttribute("categories", categories);
                     logger.info("Setting categories: " + categories);
+
+                    // Escape the GeoJSON string to ensure it's treated as a JavaScript string literal
+                    logger.info("boundaryGeoJson: " + boundaryGeoJson);
+                    request.setAttribute("boundaryGeoJson", boundaryGeoJson);
 
                     // Forward the request to the index.jsp page
                     logger.info("Forwarding to index.jsp");
